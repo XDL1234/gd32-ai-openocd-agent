@@ -119,6 +119,29 @@ This project adopts an evidence-first principle to ensure code quality:
 | "Function works" | Actual runtime result / serial log / oscilloscope waveform |
 | "Pin config correct" | Cross-check with datasheet + hardware resource table |
 
+### Multi-Agent Collaboration
+
+This project supports three-role collaboration for complex tasks:
+
+| Role | Responsibility | Allowed Operations |
+|------|----------------|-------------------|
+| **Scout** | Collect evidence and constraints | Search, analyze, report |
+| **Builder** | Implement code and verify | Write code, compile, flash |
+| **Verifier** | Review and accept | Review, evaluate, report |
+
+**When to use**:
+- Need to modify 2 or more files
+- Expected 2+ rounds of compile/flash/debug
+- Task prone to divergence or needs mid-way rollback
+- User explicitly requests "multi-agent"
+
+**Workflow**:
+```
+User Requirement → [Scout] Collect Evidence → [Builder] Implement & Verify → [Verifier] Review & Accept
+```
+
+Detailed multi-agent workflow: `docs/multi-agent-workflow.md`
+
 ### Skills System
 
 | Skill | Source | Function |

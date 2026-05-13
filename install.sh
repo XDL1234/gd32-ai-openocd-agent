@@ -111,6 +111,12 @@ if [ ! -f "docs/项目规划清单.md" ]; then
     cp "$SCRIPT_DIR/templates/项目规划清单.md" docs/
 fi
 
+# 复制多 Agent 工作流程文档
+echo "复制多 Agent 工作流程文档..."
+if [ ! -f "docs/multi-agent-workflow.md" ]; then
+    cp "$SCRIPT_DIR/docs/multi-agent-workflow.md" docs/
+fi
+
 echo ""
 echo "=========================================="
 echo "安装完成"
@@ -130,6 +136,7 @@ echo "  - hardware/硬件资源表.md       (硬件资源记录)"
 echo "  - docs/编辑清单.md             (代码修改记录)"
 echo "  - docs/研究发现.md             (搜索结果记录)"
 echo "  - docs/项目规划清单.md         (项目进度记录)"
+echo "  - docs/multi-agent-workflow.md (多 Agent 工作流程)"
 echo ""
 echo "下一步："
 echo "  1. 在 Claude Code 中输入: gd32-agent init"
