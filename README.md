@@ -22,19 +22,29 @@ GD32 AI Agent 是一个基于 Claude Code 的自动化开发工具，专为 GD32
 
 ## 快速开始
 
-### 1. 克隆项目
+### 1. 克隆 gd32-agent 到任意位置
 
 ```bash
+# 克隆到任意目录（如 D:\tools\gd32-agent）
 git clone https://github.com/XDL1234/gd32-agent.git
-cd gd32-agent
 ```
 
-### 2. 初始化
+### 2. 安装到你的工程目录
 
-在 Claude Code 中输入：
+```bash
+# 进入你的 GD32 工程目录
+cd /path/to/your-gd32-project
+
+# 运行安装脚本
+bash /path/to/gd32-agent/install.sh
+```
+
+### 3. 初始化
+
+在你的工程目录下打开 Claude Code，输入：
 
 ```
-gd32-agent init
+/gd32-agent init
 ```
 
 或
@@ -43,7 +53,7 @@ gd32-agent init
 初始化这个 GD32 工程
 ```
 
-### 3. 配置硬件
+### 4. 配置硬件
 
 编辑 `hardware/hardware.md`，填写你的硬件信息：
 
