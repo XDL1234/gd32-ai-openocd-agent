@@ -350,22 +350,40 @@ mkdir -p docs/{imported,analysis,tasks,reviews}
 
 ## Skills 使用
 
+### 开源 Skills
+
+本项目使用以下开源 Skills：
+
+| Skill | 来源 | 功能 |
+|-------|------|------|
+| document-skills | [anthropics/skills](https://github.com/anthropics/skills) | 文档处理（PDF、Word、Excel、PPT） |
+| superpowers-skills | [obra/superpowers](https://github.com/obra/superpowers) | 任务编排和开发流程 |
+| find-skills | [skills.sh](https://www.skills.sh/) | 技能发现和安装 |
+| pua-skills | [tanweai/pua](https://github.com/tanweai/pua) | AI 代理压力驱动 |
+
+### 自定义 Skills
+
+| Skill | 功能 |
+|-------|------|
+| gd32-openocd | 编译、烧录、调试 |
+| hardware-analysis | 硬件分析 |
+
 ### gd32-openocd Skill
 
 用于编译、烧录、调试：
 
 ```bash
 # 编译
-gd32-agent build
+bash .gd32-agent/build.sh
 
 # 烧录
-gd32-agent flash
+bash .gd32-agent/flash.sh build/app.hex
 
 # 串口观察
-gd32-agent serial
+bash .gd32-agent/serial.sh COM15 115200 10
 
 # 寄存器调试
-gd32-agent debug
+bash .gd32-agent/debug.sh build/app.elf
 ```
 
 ### document-skills Skill
@@ -373,11 +391,11 @@ gd32-agent debug
 用于文档读取和转换：
 
 ```bash
-# 读取文档
-gd32-agent ingest-docs
+# 扫描工程
+bash .gd32-agent/scan-project.sh
 
-# 生成索引
-gd32-agent analyze
+# 生成分析文档
+# （自动生成 docs/analysis/project-scan-report.md）
 ```
 
 ### hardware-analysis Skill
@@ -386,10 +404,56 @@ gd32-agent analyze
 
 ```bash
 # 分析硬件
-gd32-agent analyze
+# （读取 hardware/hardware.md，扫描工程文件）
 
 # 一致性检查
-gd32-agent check
+# （对比硬件文档和工程源码）
+```
+
+### superpowers-skills Skill
+
+用于任务编排和流程控制：
+
+```bash
+# 任务分解
+# （将复杂任务分解为子任务）
+
+# 流程编排
+# （按顺序执行开发流程）
+
+# 状态管理
+# （跟踪任务进度）
+```
+
+### find-skills Skill
+
+用于技能发现和安装：
+
+```bash
+# 安装技能
+npx skills add <owner/repo>
+
+# 搜索技能
+npx skills search <keyword>
+```
+
+### pua-skills Skill
+
+用于 AI 代理压力驱动：
+
+```bash
+# 核心引擎
+/pua
+
+# 开启/关闭
+/pua:on
+/pua:off
+
+# 鼓励模式
+/pua:yes
+
+# 循环模式
+/pua:pua-loop
 ```
 
 ---
@@ -429,6 +493,153 @@ openocd -f .gd32-agent/openocd.cfg -c "init; halt; gd32 protect disable; exit"
 
 ---
 
+## 串口模拟触发
+
+对于需要外部硬件触发的操作（如按键按下），使用串口模拟触发：
+
+### 模拟按键按下
+
+```bash
+# 发送按键按下命令
+echo "BUTTON_PRESS" > /dev/ttyUSB0
+
+# 接收响应
+timeout 5 cat /dev/ttyUSB0
+```
+
+### 模拟传感器数据
+
+```bash
+# 发送传感器数据
+echo "SENSOR_VALUE:1234" > /dev/ttyUSB0
+
+# 接收响应
+timeout 5 cat /dev/ttyUSB0
+```
+
+### 确认流程
+
+1. 使用串口模拟触发
+2. 观察系统响应
+3. 如果响应正确，再改为实际硬件触发
+4. 记录测试结果到 `docs/testing/pua-test-report.md`
+
+---
+
+## 日志记录
+
+使用带时间戳的日志脚本记录开发过程：
+
+### 记录编译日志
+
+```bash
+bash .gd32-agent/log-with-timestamp.sh build SUCCESS "编译完成"
+bash .gd32-agent/log-with-timestamp.sh build FAIL "编译失败"
+```
+
+### 记录烧录日志
+
+```bash
+bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
+bash .gd32-agent/log-with-timestamp.sh flash FAIL "烧录失败"
+```
+
+### 记录调试日志
+
+```bash
+bash .gd32-agent/log-with-timestamp.sh debug SUCCESS "调试完成"
+bash .gd32-agent/log-with-timestamp.sh debug FAIL "调试失败"
+```
+
+### 记录串口日志
+
+```bash
+bash .gd32-agent/log-with-timestamp.sh serial TX "发送数据"
+bash .gd32-agent/log-with-timestamp.sh serial RX "接收数据"
+```
+
+### 日志文件位置
+
+- 日志目录：`.gd32-agent/logs/`
+- 日志文件：`.gd32-agent/logs/agent-YYYYMMDD.log`
+
+---
+
+## Bug 修复文档
+
+修复 bug 时，必须提供强有力的证据支持：
+
+### 证据收集
+
+1. **寄存器转储** - 使用 GDB 读取关键寄存器
+2. **串口日志** - 记录串口输出
+3. **代码分析** - 分析相关代码
+
+### Bug 修复流程
+
+1. 发现 bug
+2. 收集证据（寄存器、日志、代码）
+3. 分析根本原因
+4. 修复代码
+5. 验证修复
+6. 记录到 `docs/bugs/bug-fix-template.md`
+
+### 证据示例
+
+```markdown
+## 证据 1：寄存器转储
+
+**时间**：2024-XX-XX XX:XX:XX
+
+| 寄存器 | 期望值 | 实际值 | 说明 |
+|--------|--------|--------|------|
+| USART_SR | 0x00000040 | 0x00000000 | 状态寄存器错误 |
+| USART_DR | 0x000000xx | 0x000000xx | 数据寄存器正确 |
+
+## 证据 2：串口日志
+
+**时间**：2024-XX-XX XX:XX:XX
+
+```
+发送：Hello GD32
+接收：（无响应）
+```
+```
+
+---
+
+## User-test 文档
+
+完成工作时，必须书写详细的 user-test 文档：
+
+### 测试内容
+
+1. 基本功能测试
+2. 通信功能测试
+3. 按键功能测试
+4. 定时器测试
+5. ADC 测试
+6. I2C 测试
+7. SPI 测试
+8. 中断测试
+9. 低功耗测试
+10. 稳定性测试
+
+### 测试文档位置
+
+- 模板：`docs/testing/user-test-template.md`
+- 测试报告：`docs/testing/user-test-report.md`
+
+### 测试流程
+
+1. 生成测试文档
+2. 用户手动测试
+3. 记录测试结果
+4. 发现问题则修复
+5. 重新测试直到通过
+
+---
+
 ## 总结
 
 **核心理念**：硬件文档定事实，流程文档定规矩，AI 负责理解和规划，Bash 负责执行。
@@ -436,3 +647,5 @@ openocd -f .gd32-agent/openocd.cfg -c "init; halt; gd32 protect disable; exit"
 **执行顺序**：读取硬件文档 → 扫描工程 → 识别芯片 → 一致性检查 → 执行任务
 
 **安全第一**：任何不确定的情况，必须停止并报告，等待用户确认。
+
+**质量保证**：串口模拟验证 → 日志记录 → Bug 证据 → 用户测试
