@@ -1,9 +1,9 @@
 # GD32 AI Agent
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/XDL1234/gd32-ai-openocd-agent.svg)](https://github.com/XDL1234/gd32-ai-openocd-agent/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/XDL1234/gd32-ai-openocd-agent.svg)](https://github.com/XDL1234/gd32-ai-openocd-agent/issues)
-[![GitHub forks](https://img.shields.io/github/forks/XDL1234/gd32-ai-openocd-agent.svg)](https://github.com/XDL1234/gd32-ai-openocd-agent/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/XDL1234/gd32-agent.svg)](https://github.com/XDL1234/gd32-agent/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/XDL1234/gd32-agent.svg)](https://github.com/XDL1234/gd32-agent/issues)
+[![GitHub forks](https://img.shields.io/github/forks/XDL1234/gd32-agent.svg)](https://github.com/XDL1234/gd32-agent/network/members)
 
 > Claude Code based GD32 embedded automation development Agent
 
@@ -25,7 +25,7 @@ GD32 AI Agent is an automation development tool based on Claude Code, specifical
 ### 1. Clone Project
 
 ```bash
-git clone https://github.com/XDL1234/gd32-ai-openocd-agent.git
+git clone https://github.com/XDL1234/gd32-agent.git
 cd gd32-ai-openocd-agent
 ```
 
@@ -214,8 +214,8 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## Contact
 
 - GitHub: [XDL1234](https://github.com/XDL1234)
-- Issues: [GitHub Issues](https://github.com/XDL1234/gd32-ai-openocd-agent/issues)
+- Issues: [GitHub Issues](https://github.com/XDL1234/gd32-agent/issues)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=XDL1234/gd32-ai-openocd-agent&type=Date)](https://star-history.com/#XDL1234/gd32-ai-openocd-agent&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=XDL1234/gd32-agent&type=Date)](https://star-history.com/#XDL1234/gd32-agent&Date)

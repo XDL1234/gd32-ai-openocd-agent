@@ -1,9 +1,9 @@
 # GD32 AI Agent
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/XDL1234/gd32-ai-openocd-agent.svg)](https://github.com/XDL1234/gd32-ai-openocd-agent/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/XDL1234/gd32-ai-openocd-agent.svg)](https://github.com/XDL1234/gd32-ai-openocd-agent/issues)
-[![GitHub forks](https://img.shields.io/github/forks/XDL1234/gd32-ai-openocd-agent.svg)](https://github.com/XDL1234/gd32-ai-openocd-agent/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/XDL1234/gd32-agent.svg)](https://github.com/XDL1234/gd32-agent/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/XDL1234/gd32-agent.svg)](https://github.com/XDL1234/gd32-agent/issues)
+[![GitHub forks](https://img.shields.io/github/forks/XDL1234/gd32-agent.svg)](https://github.com/XDL1234/gd32-agent/network/members)
 
 > 基于 Claude Code 的 GD32 嵌入式自动化开发 Agent
 
@@ -25,7 +25,7 @@ GD32 AI Agent 是一个基于 Claude Code 的自动化开发工具，专为 GD32
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/XDL1234/gd32-ai-openocd-agent.git
+git clone https://github.com/XDL1234/gd32-agent.git
 cd gd32-ai-openocd-agent
 ```
 
@@ -214,8 +214,8 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 ## 联系方式
 
 - GitHub: [XDL1234](https://github.com/XDL1234)
-- Issues: [GitHub Issues](https://github.com/XDL1234/gd32-ai-openocd-agent/issues)
+- Issues: [GitHub Issues](https://github.com/XDL1234/gd32-agent/issues)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=XDL1234/gd32-ai-openocd-agent&type=Date)](https://star-history.com/#XDL1234/gd32-ai-openocd-agent&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=XDL1234/gd32-agent&type=Date)](https://star-history.com/#XDL1234/gd32-agent&Date)
