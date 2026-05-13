@@ -37,7 +37,7 @@ git clone https://github.com/XDL1234/gd32-agent.git
 Open Claude Code in your project directory, type:
 
 ```
-/gd32-agent init
+gd32-agent init
 ```
 
 or

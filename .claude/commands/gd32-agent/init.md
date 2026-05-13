@@ -2,7 +2,7 @@
 
 ## 指令说明
 
-输入 `/gd32-agent init` 进行 GD32 工程初始化。
+输入 `gd32-agent init` 进行 GD32 工程初始化。
 
 ## 执行流程
 
@@ -45,7 +45,7 @@ if [ ! -f ".gd32-agent/check-env.sh" ] || [ ! -f ".gd32-agent/build.sh" ]; then
         echo "  2. 上级目录（../gd32-agent/）"
         echo "  3. 或设置环境变量 GD32_AGENT_PATH 指向仓库路径"
         echo ""
-        echo "完成后再次运行: /gd32-agent init"
+        echo "完成后再次运行: gd32-agent init"
         exit 1
     fi
 else
@@ -170,7 +170,7 @@ find . -name "gd32f4xx*.h" | head -5
 
 **如果没有读取到工程文件**：
 - 提醒用户创立好工程文件
-- 提示用户完成后再使用 `/gd32-agent init`
+- 提示用户完成后再使用 `gd32-agent init`
 
 ### Step 5: 创建目录结构
 
@@ -330,7 +330,7 @@ cp -r .claude/skills/* user-project/.claude/skills/
 在 Claude Code 中输入：
 
 ```
-/gd32-agent init
+gd32-agent init
 ```
 
 或

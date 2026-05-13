@@ -37,7 +37,7 @@ git clone https://github.com/XDL1234/gd32-agent.git
 在你的工程目录下打开 Claude Code，输入：
 
 ```
-/gd32-agent init
+gd32-agent init
 ```
 
 或
