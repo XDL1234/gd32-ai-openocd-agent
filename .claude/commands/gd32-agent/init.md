@@ -281,7 +281,7 @@ cp -r .claude/skills/* user-project/.claude/skills/
 在 Claude Code 中输入：
 
 ```
-/gd32-ai-agent init
+/gd32-agent init
 ```
 
 或
