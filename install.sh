@@ -93,6 +93,24 @@ if [ ! -f "docs/testing/user-test-template.md" ]; then
     cp "$SCRIPT_DIR/docs/testing/user-test-template.md" docs/testing/
 fi
 
+# 复制四文件模板（工作记忆机制）
+echo "复制四文件模板..."
+if [ ! -f "hardware/硬件资源表.md" ]; then
+    cp "$SCRIPT_DIR/templates/硬件资源表.md" hardware/
+fi
+
+if [ ! -f "docs/编辑清单.md" ]; then
+    cp "$SCRIPT_DIR/templates/编辑清单.md" docs/
+fi
+
+if [ ! -f "docs/研究发现.md" ]; then
+    cp "$SCRIPT_DIR/templates/研究发现.md" docs/
+fi
+
+if [ ! -f "docs/项目规划清单.md" ]; then
+    cp "$SCRIPT_DIR/templates/项目规划清单.md" docs/
+fi
+
 echo ""
 echo "=========================================="
 echo "安装完成"
@@ -106,8 +124,12 @@ echo "  - .gd32-agent/       (Agent 脚本)"
 echo "  - .claude/           (Claude 配置)"
 echo ""
 echo "已创建的文件："
-echo "  - CLAUDE.md          (Agent 规则)"
-echo "  - .gd32-agent/*.sh   (工具脚本)"
+echo "  - CLAUDE.md                    (Agent 规则)"
+echo "  - .gd32-agent/*.sh             (工具脚本)"
+echo "  - hardware/硬件资源表.md       (硬件资源记录)"
+echo "  - docs/编辑清单.md             (代码修改记录)"
+echo "  - docs/研究发现.md             (搜索结果记录)"
+echo "  - docs/项目规划清单.md         (项目进度记录)"
 echo ""
 echo "下一步："
 echo "  1. 在 Claude Code 中输入: gd32-agent init"

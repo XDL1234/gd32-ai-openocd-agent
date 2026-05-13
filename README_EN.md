@@ -87,6 +87,38 @@ Help me implement USART0 boot log printing, and verify with flash
 User Requirement → Environment Check → Project Scan → Document Generation → Task Planning → Code Modification → Build → Flash → Test → Report
 ```
 
+### Four-File Working Memory Mechanism
+
+This project uses a four-file disk working memory pattern to solve the "memory loss" problem after session interruptions:
+
+| File | Path | Purpose |
+|------|------|---------|
+| **Hardware Resource Table** | `hardware/硬件资源表.md` | Record chip, pins, DMA, interrupts |
+| **Edit Log** | `docs/编辑清单.md` | Record every code modification and Git status |
+| **Research Findings** | `docs/研究发现.md` | Record search results and technical solutions |
+| **Project Planning** | `docs/项目规划清单.md` | Record overall project progress |
+
+**Session Recovery Rules**: At the start of each session, answer the Five-Question Restart Test:
+1. What stage am I in?
+2. What was the last code modification?
+3. Are chip model and pin assignment confirmed?
+4. What did previous searches find?
+5. Where should I continue?
+
+### Evidence-First Principle
+
+This project adopts an evidence-first principle to ensure code quality:
+
+- **Verification Gate**: Every completion claim must have verification evidence
+- **Anti-Self-Deception Checklist**: Prevent using vague language to mask uncertainty
+- **Prohibited Vague Words**: Words like "should", "theoretically", "probably" are prohibited
+
+| Claim | Required Evidence |
+|-------|-------------------|
+| "Build passed" | Build command output + exit code 0 |
+| "Function works" | Actual runtime result / serial log / oscilloscope waveform |
+| "Pin config correct" | Cross-check with datasheet + hardware resource table |
+
 ### Skills System
 
 | Skill | Source | Function |
@@ -103,7 +135,8 @@ User Requirement → Environment Check → Project Scan → Document Generation 
 ```
 your-gd32-project/
 ├── hardware/
-│   └── hardware.md          # Hardware Document
+│   ├── hardware.md          # Hardware Document
+│   └── 硬件资源表.md        # Hardware Resource Table (pins, DMA, interrupts)
 ├── workflow/
 │   └── development-flow.md  # Development Flow
 ├── docs/
@@ -111,7 +144,10 @@ your-gd32-project/
 │   ├── tasks/               # Task Documents
 │   ├── reviews/             # Review Documents
 │   ├── bugs/                # Bug Documents
-│   └── testing/             # Test Documents
+│   ├── testing/             # Test Documents
+│   ├── 编辑清单.md          # Edit Log (session recovery)
+│   ├── 研究发现.md          # Research Findings (session recovery)
+│   └── 项目规划清单.md      # Project Planning (session recovery)
 ├── .gd32-agent/
 │   ├── openocd.cfg          # OpenOCD Config
 │   ├── check-env.sh         # Environment Check
