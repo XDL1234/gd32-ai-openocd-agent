@@ -26,7 +26,7 @@ GD32 AI Agent 是一个基于 Claude Code 的自动化开发工具，专为 GD32
 
 ```bash
 git clone https://github.com/XDL1234/gd32-agent.git
-cd gd32-ai-openocd-agent
+cd gd32-agent
 ```
 
 ### 2. 初始化
