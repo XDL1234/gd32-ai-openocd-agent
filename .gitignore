@@ -1,0 +1,92 @@
+# 编译产物
+*.o
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+build/
+ output/
+
+# IDE 文件
+*.uvoptx
+*.uvguix
+*.iex
+*.dep
+*.crf
+*.d
+*.lst
+*.o
+*.htm
+*.lnp
+*.sct
+*.axf
+*.tra
+*.htm
+*.lnp
+*.sct
+*.axf
+*.tra
+*.bat
+*.txt
+!GPT方案.txt
+
+# Keil 文件
+MDK-ARM/*.uvoptx
+MDK-ARM/*.uvguix
+MDK-ARM/*.iex
+MDK-ARM/*.dep
+MDK-ARM/*.crf
+MDK-ARM/*.d
+MDK-ARM/*.lst
+MDK-ARM/*.o
+MDK-ARM/*.htm
+MDK-ARM/*.lnp
+MDK-ARM/*.sct
+MDK-ARM/*.axf
+MDK-ARM/*.tra
+MDK-ARM/Objects/
+MDK-ARM/Listings/
+
+# IAR 文件
+EWARM/*.xcl
+EWARM/*.dep
+EWARM/*.cout
+EWARM/*.pbd
+EWARM/*.pbi
+EWARM/*.wsdt
+EWARM/settings/
+
+# VS Code
+.vscode/
+
+# Trellis 临时文件
+.trellis/.developer
+.trellis/workspace/
+
+# Agent 日志
+.gd32-agent/*.log
+.gd32-agent/register-dump.md
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# 调试文件
+*.gdb
+debug_*.gdb
