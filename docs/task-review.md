@@ -7,7 +7,7 @@
 
 | 序号 | 任务 | 状态 | 文件/目录 |
 |------|------|------|-----------|
-| 1 | `/gd32-ai-agent init` 指令 | ✅ 完成 | `.claude/commands/gd32-ai-agent/init.md` |
+| 1 | `gd32-agent init` 指令 | ✅ 完成 | `.claude/commands/gd32-agent/init.md` |
 | 2 | 环境配置（扫描工具） | ✅ 完成 | `.gd32-agent/check-env.sh` |
 | 3 | 工程扫描（芯片/库类型） | ✅ 完成 | `.gd32-agent/scan-project.sh` |
 | 4 | 生成文档让用户确认 | ✅ 完成 | `docs/analysis/project-scan-report.md` |
@@ -26,9 +26,9 @@
 
 ## 详细说明
 
-### 1. `/gd32-ai-agent init` 指令
+### 1. `gd32-agent init` 指令
 
-**文件**：`.claude/commands/gd32-ai-agent/init.md`
+**文件**：`.claude/commands/gd32-agent/init.md`
 
 **功能**：
 - 环境配置检查

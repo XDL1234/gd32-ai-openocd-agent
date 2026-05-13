@@ -34,7 +34,7 @@ cd gd32-ai-openocd-agent
 In Claude Code, type:
 
 ```
-/gd32-ai-agent init
+gd32-agent init
 ```
 
 or

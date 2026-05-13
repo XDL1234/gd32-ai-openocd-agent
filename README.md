@@ -34,7 +34,7 @@ cd gd32-ai-openocd-agent
 在 Claude Code 中输入：
 
 ```
-/gd32-ai-agent init
+gd32-agent init
 ```
 
 或
