@@ -2,6 +2,16 @@
 
 你正在协助用户开发 GD32 嵌入式工程。必须严格遵守以下规则。
 
+## 指令层级
+
+```
+L1 — CLAUDE.md（本文件）：安全红线 + 路径配置 + 核心流程，每次会话加载
+L2 — embedded-dev/SKILL.md：完整 RIPER-5 开发协议（证据优先、轮次制、多Agent），Skill 触发时加载
+L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模板、工作流等）
+```
+
+重复内容以 L2/L3 为准，本文件只保留摘要和引用。
+
 ---
 
 ## 最高优先级
@@ -10,298 +20,69 @@
 
 1. `hardware/hardware.md` - 硬件事实源
 2. `workflow/development-flow.md` - 开发流程规则
+3. `embedded-dev/SKILL.md` - 完整开发协议
 
 ---
 
 ## 第一步：读取硬件文档
 
-每次执行任务前，必须先读取硬件文档：
-
-```bash
-cat hardware/hardware.md
-```
-
-提取关键信息：
-- 芯片型号
-- 芯片系列
-- 调试器类型
-- 串口配置
-- 风险限制
+每次执行任务前，必须先读取 `hardware/hardware.md`，提取：芯片型号、芯片系列、调试器类型、串口配置、风险限制。
 
 ---
 
 ## 第二步：扫描工程文件
 
-扫描工程目录，识别芯片型号：
+扫描启动文件(`startup_*.s`)、链接脚本(`*.ld`)、头文件(`gd32*.h`)、CMakeLists.txt、Makefile、源码头文件引用，识别芯片型号。
 
-```bash
-# 1. 扫描启动文件
-find . -name "startup_*.s" | head -5
+识别优先级：启动文件名 → 链接脚本 → 头文件 → CMakeLists.txt → 源码引用。
 
-# 2. 扫描链接脚本
-find . -name "*.ld" | head -5
-
-# 3. 扫描头文件
-find . -name "gd32*.h" | head -5
-
-# 4. 扫描 CMakeLists.txt
-grep -r "GD32" CMakeLists.txt 2>/dev/null
-
-# 5. 扫描 Makefile
-grep -r "GD32" Makefile 2>/dev/null
-
-# 6. 扫描源码头文件引用
-grep -r "#include.*gd32" src/ inc/ 2>/dev/null
-```
-
-### 识别规则
-
-| 来源 | 文件 | 识别内容 |
-|------|------|----------|
-| 启动文件 | `startup_*.s` | 芯片系列（GD32F10x、GD32F30x 等） |
-| 链接脚本 | `*.ld` | Flash/SRAM 大小、起始地址 |
-| 头文件 | `gd32*.h` | 芯片系列宏定义 |
-| CMakeLists.txt | `CMakeLists.txt` | 芯片型号宏（GD32F103C8T6） |
-| 源码 | `main.c` | 头文件引用 |
-
-### 识别优先级
-
-1. 启动文件名 → 芯片系列
-2. 链接脚本 → Flash/SRAM
-3. 头文件 → 芯片系列
-4. CMakeLists.txt → 芯片型号
-5. 源码头文件引用 → 芯片系列
-
-### 自动更新 hardware.md
-
-当 AI 识别到芯片型号后，自动更新 `hardware/hardware.md`：
-
-```markdown
-# 硬件文档
-
-## MCU 信息
-- 芯片型号：GD32F470VET6  <!-- AI 识别 -->
-- 芯片系列：GD32F4xx      <!-- AI 识别 -->
-- 内核：Cortex-M4          <!-- AI 推断 -->
-- Flash：512KB              <!-- AI 识别 -->
-- SRAM：256KB               <!-- AI 识别 -->
-- Flash 起始地址：0x08000000 <!-- AI 识别 -->
-
-## 下载调试接口
-- LINK 类型：DAPLink       <!-- 用户填写 -->
-- 接口协议：SWD            <!-- 用户填写 -->
-- 默认下载速度：1000 kHz   <!-- 用户填写 -->
-
-## 串口输出
-- 串口号：USART0           <!-- 用户填写 -->
-- TX：PA9                  <!-- 用户填写 -->
-- RX：PA10                 <!-- 用户填写 -->
-- 波特率：115200           <!-- 用户填写 -->
-
-## 风险限制
-- 是否允许全片擦除：否     <!-- 用户填写 -->
-- 是否允许修改 Option Bytes：否 <!-- 用户填写 -->
-- 是否允许解除读保护：否   <!-- 用户填写 -->
-```
-
-### 识别规则
-
-| 来源 | 文件 | 识别内容 |
-|------|------|----------|
-| 启动文件 | `startup_*.s` | 芯片系列（GD32F10x、GD32F30x 等） |
-| 链接脚本 | `*.ld` | Flash/SRAM 大小、起始地址 |
-| 头文件 | `gd32*.h` | 芯片系列宏定义 |
-| CMakeLists.txt | `CMakeLists.txt` | 芯片型号宏（GD32F103C8T6） |
-| 源码 | `main.c` | 头文件引用 |
+识别完成后自动更新 `hardware/hardware.md` 中 AI 可推断的字段。
 
 ---
 
 ## 第三步：一致性检查
 
-将 AI 识别结果与硬件文档对比：
-
-```markdown
-| 项目 | 硬件文档 | AI 识别 | 结果 |
-|------|----------|---------|------|
-| 芯片型号 | ? | ? | 一致/冲突 |
-| 芯片系列 | ? | ? | 一致/冲突 |
-| Flash | ? | ? | 一致/冲突 |
-| SRAM | ? | ? | 一致/冲突 |
-```
-
-### 冲突处理
-
-如果硬件文档与 AI 识别结果冲突：
-1. **停止执行**
-2. **报告冲突详情**
-3. **要求用户确认**
-4. **用户确认后继续**
+将 AI 识别结果与硬件文档对比（芯片型号、系列、Flash、SRAM）。冲突时：停止执行 → 报告冲突 → 等待用户确认。
 
 ---
 
-## 第四步：自动生成 OpenOCD 配置
+## 第四步：OpenOCD 配置
 
-根据识别结果，生成 `.gd32-agent/openocd.cfg`：
+### 调试器映射
 
-```bash
-mkdir -p .gd32-agent
+| 调试器 | OpenOCD interface |
+|--------|-------------------|
+| ST-LINK | stlink.cfg |
+| DAPLink | cmsis-dap.cfg |
+| J-Link | jlink.cfg |
 
-# 根据调试器类型生成配置
-# ST-LINK
-cat > .gd32-agent/openocd.cfg << 'EOF'
-source [find interface/stlink.cfg]
-source [find target/gd32f1x.cfg]
-adapter speed 1000
-EOF
+### GD32 系列映射
 
-# DAPLink
-# source [find interface/cmsis-dap.cfg]
+| 系列 | OpenOCD target |
+|------|----------------|
+| GD32F1xx | gd32f1x.cfg |
+| GD32F3xx | gd32f3x.cfg |
+| GD32F4xx | stm32f4x.cfg（兼容） |
+| GD32E2xx | stm32f0x.cfg（兼容） |
 
-# J-Link
-# source [find interface/jlink.cfg]
-```
+### 路径配置
 
-### 调试器配置映射
-
-| 调试器 | OpenOCD 配置 |
-|--------|--------------|
-| ST-LINK | interface/stlink.cfg |
-| DAPLink | interface/cmsis-dap.cfg |
-| J-Link | interface/jlink.cfg |
-
-### GD32 系列配置映射
-
-| 系列 | OpenOCD 配置 |
-|------|--------------|
-| GD32F1x | target/gd32f1x.cfg |
-| GD32F3x | target/gd32f3x.cfg |
-| GD32F4x | target/stm32f4x.cfg（兼容） |
-
-### OpenOCD 路径配置
-
-OpenOCD 安装路径：`D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe`
-
-使用时需要指定完整路径：
-```bash
-"D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe" -f .gd32-agent/openocd.cfg -c "program firmware.hex verify reset exit"
-```
+优先读取 `.gd32-agent/config.env` 中的 `OPENOCD_PATH`，fallback 到 `which openocd`，最后使用硬编码路径。
 
 ---
 
 ## 第五步：执行开发任务
 
-### 标准流程
+标准流程：读取硬件文档 → 扫描工程 → 识别芯片 → 一致性检查 → 生成 OpenOCD 配置 → 用户确认 → Plan Mode 制定计划 → 执行代码修改 → 编译 → 烧录 → 验证。
 
-1. 读取硬件文档
-2. 扫描工程目录
-3. 识别芯片型号
-4. 一致性检查
-5. 生成 OpenOCD 配置
-6. 用户确认任务需求
-7. 使用 Plan Mode 制定计划
-8. 用户确认计划
-9. 执行代码修改
-10. 编译工程
-11. 烧录固件
-12. 观察串口输出
-13. 观察寄存器状态
-14. 修复 bug
-15. 生成任务结果文档
-
-### 任务规划流程
-
-#### 1. 生成任务需求文档
-
-创建 `docs/tasks/task-requirements.md`：
-- 用户原始需求
-- 硬件依据
-- 需要完成的事项
-- 禁止事项
-- 验收标准
-
-#### 2. 使用 Plan Mode 制定计划
-
-进入 Plan Mode，只允许：
-- 读取文件
-- 扫描源码
-- 分析依赖
-- 生成计划
-- 不允许直接改代码
-
-创建 `docs/tasks/task-plan.md`：
-- 目标
-- 修改计划（Step 1, 2, 3...）
-- 风险
-- 依赖
-
-#### 3. 用户确认计划
-
-展示计划给用户，获得确认后再执行。
-
-#### 4. 执行代码修改
-
-根据 task-plan.md 执行代码修改，更新 `docs/tasks/task-progress.md`。
-
-#### 5. 生成任务结果
-
-创建 `docs/tasks/task-result.md`：
-- 任务概述
-- 执行结果（编译、烧录、串口、寄存器）
-- 验证结果
-- 问题与解决
-- 总结
-
-### 编译工程
+工具脚本（详见 `.gd32-agent/` 目录）：
 
 ```bash
-# CMake 工程
-mkdir -p build && cd build && cmake .. && make 2>&1 | tee ../.gd32-agent/build.log
-
-# Make 工程
-make clean && make 2>&1 | tee .gd32-agent/build.log
-```
-
-### 烧录固件
-
-```bash
-# 烧录前确认
-echo "芯片：$(grep '芯片型号' hardware/hardware.md | cut -d'：' -f2)"
-echo "调试器：$(grep 'LINK 类型' hardware/hardware.md | cut -d'：' -f2)"
-echo "固件：build/app.elf"
-
-# 执行烧录
-openocd -f .gd32-agent/openocd.cfg -c "program build/app.elf verify reset exit"
-```
-
-### 串口观察
-
-```bash
-# Windows
-python -m serial.tools.miniterm COM3 115200 --raw > .gd32-agent/serial.log &
-sleep 10
-kill %1
-
-# Linux
-timeout 10 minicom -D /dev/ttyUSB0 -b 115200 -C .gd32-agent/serial.log
-```
-
-### 寄存器调试
-
-```bash
-# 启动 OpenOCD
-openocd -f .gd32-agent/openocd.cfg &
-OPENOCD_PID=$!
-
-# 使用 GDB 读取寄存器
-arm-none-eabi-gdb build/app.elf -batch \
-  -ex "target remote :3333" \
-  -ex "monitor halt" \
-  -ex "info registers" \
-  -ex "monitor reg" \
-  > .gd32-agent/register-dump.md
-
-# 停止 OpenOCD
-kill $OPENOCD_PID
+bash .gd32-agent/build.sh                    # 编译
+bash .gd32-agent/flash.sh build/app.hex      # 烧录
+bash .gd32-agent/serial.sh COM15 115200 10   # 串口观察
+bash .gd32-agent/debug.sh build/app.elf      # 寄存器调试
+bash .gd32-agent/log-with-timestamp.sh <type> <status> "<message>"  # 日志
 ```
 
 ---
@@ -310,151 +91,25 @@ kill $OPENOCD_PID
 
 ### 禁止行为
 
-- **禁止**未确认直接全片擦除
-- **禁止**未确认修改 Option Bytes
-- **禁止**未确认解除读保护
-- **禁止**跳过硬件文档直接修改代码
-- **禁止**编译失败后继续烧录
-- **禁止**芯片型号不确定时执行烧录
-- **禁止**调试器类型不确定时执行烧录
+- 未确认直接全片擦除
+- 未确认修改 Option Bytes
+- 未确认解除读保护
+- 跳过硬件文档直接修改代码
+- 编译失败后继续烧录
+- 芯片型号或调试器类型不确定时执行烧录
 
-### 必须确认
+### 烧录前必须确认
 
-烧录前必须确认：
-1. 芯片型号
-2. 调试器类型
-3. 固件文件
-4. OpenOCD 配置
+1. 芯片型号 2. 调试器类型 3. 固件文件 4. OpenOCD 配置
 
 ---
 
-## 输出文档
-
-每次任务必须生成：
-
-```bash
-mkdir -p docs/{imported,analysis,tasks,reviews}
-```
-
-### 必须生成的文档
-
-| 文档 | 路径 | 内容 |
-|------|------|------|
-| 硬件分析 | `docs/analysis/project-hardware-analysis.md` | MCU、引脚、时钟、外设 |
-| 任务需求 | `docs/tasks/task-requirements.md` | 用户需求、硬件依据 |
-| 任务计划 | `docs/tasks/task-plan.md` | 执行步骤、风险点 |
-| 代码审查 | `docs/reviews/code-review.md` | 修改文件、一致性检查 |
-| 任务结果 | `docs/tasks/task-result.md` | 执行结果、验证结果 |
-
----
-
-## Skills 使用
-
-### 开源 Skills
-
-本项目使用以下开源 Skills：
-
-| Skill | 来源 | 功能 |
-|-------|------|------|
-| document-skills | [anthropics/skills](https://github.com/anthropics/skills) | 文档处理（PDF、Word、Excel、PPT） |
-| superpowers-skills | [obra/superpowers](https://github.com/obra/superpowers) | 任务编排和开发流程 |
-| find-skills | [skills.sh](https://www.skills.sh/) | 技能发现和安装 |
-| pua-skills | [tanweai/pua](https://github.com/tanweai/pua) | AI 代理压力驱动 |
-
-### 自定义 Skills
+## Skills
 
 | Skill | 功能 |
 |-------|------|
-| gd32-openocd | 编译、烧录、调试 |
-| hardware-analysis | 硬件分析 |
-
-### gd32-openocd Skill
-
-用于编译、烧录、调试：
-
-```bash
-# 编译
-bash .gd32-agent/build.sh
-
-# 烧录
-bash .gd32-agent/flash.sh build/app.hex
-
-# 串口观察
-bash .gd32-agent/serial.sh COM15 115200 10
-
-# 寄存器调试
-bash .gd32-agent/debug.sh build/app.elf
-```
-
-### document-skills Skill
-
-用于文档读取和转换：
-
-```bash
-# 扫描工程
-bash .gd32-agent/scan-project.sh
-
-# 生成分析文档
-# （自动生成 docs/analysis/project-scan-report.md）
-```
-
-### hardware-analysis Skill
-
-用于硬件分析：
-
-```bash
-# 分析硬件
-# （读取 hardware/hardware.md，扫描工程文件）
-
-# 一致性检查
-# （对比硬件文档和工程源码）
-```
-
-### superpowers-skills Skill
-
-用于任务编排和流程控制：
-
-```bash
-# 任务分解
-# （将复杂任务分解为子任务）
-
-# 流程编排
-# （按顺序执行开发流程）
-
-# 状态管理
-# （跟踪任务进度）
-```
-
-### find-skills Skill
-
-用于技能发现和安装：
-
-```bash
-# 安装技能
-npx skills add <owner/repo>
-
-# 搜索技能
-npx skills search <keyword>
-```
-
-### pua-skills Skill
-
-用于 AI 代理压力驱动：
-
-```bash
-# 核心引擎
-/pua
-
-# 开启/关闭
-/pua:on
-/pua:off
-
-# 鼓励模式
-/pua:yes
-
-# 循环模式
-/pua:pua-loop
-```
+| gd32-openocd | 编译、烧录、调试（`.gd32-agent/*.sh`） |
+| hardware-analysis | 硬件分析（读取 hardware.md + 扫描工程文件 + 一致性检查） |
 
 ---
 
@@ -463,384 +118,41 @@ npx skills search <keyword>
 ### 烧录失败
 
 ```bash
-# 1. 检查 OpenOCD 连接
-openocd -f .gd32-agent/openocd.cfg -c "init; halt; exit"
-
-# 2. 检查芯片是否被锁
-openocd -f .gd32-agent/openocd.cfg -c "init; halt; flash info 0; exit"
-
-# 3. 尝试解除读保护（需要用户确认）
-openocd -f .gd32-agent/openocd.cfg -c "init; halt; gd32 protect disable; exit"
+openocd -f .gd32-agent/openocd.cfg -c "init; halt; exit"              # 检查连接
+openocd -f .gd32-agent/openocd.cfg -c "init; halt; flash info 0; exit" # 检查锁定
 ```
 
 ### 串口无输出
 
-```bash
-# 1. 检查 GPIO 配置
-# 2. 检查时钟配置
-# 3. 检查波特率配置
-# 4. 检查 printf 重定向
-```
+检查顺序：GPIO 配置 → 时钟配置 → 波特率 → printf 重定向
 
 ### 编译失败
 
-```bash
-# 1. 检查头文件路径
-# 2. 检查源文件是否加入编译
-# 3. 检查宏定义
-# 4. 检查链接脚本
-```
+检查顺序：头文件路径 → 源文件编译列表 → 宏定义 → 链接脚本
 
 ---
 
-## 四文件工作记忆机制
-
-本项目采用**四文件磁盘工作记忆**模式，用于会话恢复和任务追踪：
-
-### 四文件说明
+## 四文件工作记忆
 
 | 文件 | 路径 | 用途 |
 |------|------|------|
-| **硬件资源表** | `hardware/硬件资源表.md` | 记录芯片、引脚、DMA、中断等硬件信息 |
-| **编辑清单** | `docs/编辑清单.md` | 记录每次代码修改和 Git 状态 |
-| **研究发现** | `docs/研究发现.md` | 记录搜索结果和技术方案 |
-| **项目规划清单** | `docs/项目规划清单.md` | 记录项目整体进度和轮次 |
+| 硬件资源表 | `hardware/硬件资源表.md` | 引脚、DMA、中断等硬件信息 |
+| 编辑清单 | `docs/编辑清单.md` | 代码修改和 Git 状态记录 |
+| 研究发现 | `docs/研究发现.md` | 搜索结果和技术方案 |
+| 项目规划清单 | `docs/项目规划清单.md` | 项目进度和轮次 |
 
-### 会话恢复规则（五问重启测试）
-
-每次会话开始时，必须按顺序回答以下问题：
-
-1. **检查 `docs/项目规划清单.md`** → 当前处于哪个阶段？
-2. **检查 `docs/编辑清单.md`** → 最后一次代码修改是什么？
-3. **检查 `hardware/硬件资源表.md`** → 芯片型号和引脚分配确认吗？
-4. **检查 `docs/研究发现.md`** → 之前的搜索发现了什么？
-5. **确认继续点** → 我现在应该从哪里继续？
-
-**五问全部回答后才能继续工作。**
-
-### 文件更新规则
-
-1. **硬件资源表**：引脚/DMA/中断变更时必须同步更新
-2. **编辑清单**：每次代码修改后立即更新
-3. **研究发现**：每 2 次搜索操作后必须写入
-4. **项目规划清单**：每次阶段切换必须更新
-
----
-
-## 证据优先原则
-
-### 核心规则
-
-**结论必须基于证据，禁止使用模糊语言。**
-
-### 验证门机制
-
-对每个完成声明执行验证门：
-1. **IDENTIFY**：什么命令/操作能证明这个声明？
-2. **RUN**：实际执行该命令
-3. **READ**：完整读取输出，检查退出码/返回值
-4. **VERIFY**：输出是否明确确认声明？
-5. **ONLY THEN**：发出完成声明
-
-### 常见验证对照
-
-| 声明 | 必须的证据 |
-|------|-----------|
-| "编译通过" | 编译命令输出 + 退出码 0 |
-| "功能正常" | 实际运行结果 / 串口日志 / 示波器波形 |
-| "引脚配置正确" | 对照数据手册 + 硬件资源表逐项确认 |
-| "中断工作正常" | 中断触发证据（GPIO 翻转/串口计数/断点命中） |
-| "DMA 传输完成" | DMA 完成标志位 + 目标缓冲区数据正确 |
-
-### 反自欺检查表
-
-**审查过程中若出现以下念头，必须立即停下来验证：**
-
-| 你在想什么 | 现实 | 正确做法 |
-|-----------|------|---------|
-| "编译通过了，应该没问题" | 编译通过 ≠ 功能正确 | 回到验证门 |
-| "这个寄存器配置应该对的" | "应该"不是证据 | 打开数据手册逐位确认 |
-| "上次这样改好用的" | 环境不同，不能套用 | 从当前证据出发重新验证 |
-| "差不多可以了" | "差不多"是 bug 的温床 | 要么完全正确，要么标记未完成 |
-
-### 禁止的模糊词汇
-
-在声明完成时，禁止使用：
-- ❌ "应该"、"理论上"、"大概"、"基本上"
-- ❌ "可能没问题"、"估计可以"
-- ✅ 只允许"已验证"或"未验证"
-
----
-
-## 轮次制管理
-
-### 启用条件
-
-满足以下任一条件时，启用轮次制：
-- 修改 2 个及以上文件
-- 预计需要 2 轮以上编译/烧录/调试
-- 任务容易发散或需要中途回退
-
-### 轮次规则
-
-1. 每轮只处理一个改动点
-2. 开始前声明：`trace_id`、当前轮次、目标、验证标准、停止条件
-3. 结束时必须交付：改动摘要、涉及文件、验证命令与输出、风险、下一轮建议
-
-### 交接摘要格式
-
-```
-[轮次汇报]
-trace_id: <任务标识>
-round: <第 N 轮>
-goal: <本轮目标>
-verify: <成功标准>
-
-changes:
-- <改动摘要 1>
-- <改动摘要 2>
-
-evidence:
-- file: <路径:行号>
-- command: <实际执行命令>
-- result: <关键输出或结论>
-
-risks:
-- <已知风险或未确认项>
-
-handoff:
-1. <本轮改了什么>
-2. <已确认了什么>
-3. <下一轮要验证什么>
-```
-
-### 停止红线
-
-- 新增依赖
-- 一次改动超过 5 个文件
-- 修改根目录构建/烧录/工具链配置
-- 连续两轮都无法确认根因
-- 需要危险操作（批量删除、强制回退、量产烧录）
-
----
-
-## 多 Agent 分工协作
-
-### 角色定义
-
-本项目支持三角色分工协作：
-
-| 角色 | 职责 | 允许操作 | 禁止操作 |
-|------|------|----------|----------|
-| **Scout** | 收集证据和约束 | 搜索、分析、报告 | 修改代码、写入文件 |
-| **Builder** | 实现代码并验证 | 编写代码、编译、烧录 | 做侦察、做审查 |
-| **Verifier** | 审查和验收 | 审查、评估、报告 | 修改代码、补充实现 |
-
-### 适用场景
-
-满足以下任一条件时，启用多 Agent 模式：
-- 需要修改 2 个及以上文件
-- 预计需要 2 轮以上编译/烧录/调试
-- 任务容易发散或需要中途回退
-- 用户明确要求"多 Agent"或"并行探索"
-
-### 角色职责
-
-#### Scout Agent
-
-**必须交付**：
-1. 相关文件路径，按优先级排序
-2. 相似实现或既有模式
-3. 已确认约束：芯片、固件库、构建方式、引脚/时钟/DMA/中断限制
-4. 建议的最小改动范围
-
-**禁止行为**：
-- ❌ 修改任何文件
-- ❌ 编写代码
-- ❌ 做最终决策
-
-#### Builder Agent
-
-**必须交付**：
-1. 3-7 步执行计划
-2. 实际代码改动或 diff
-3. 验证结果：编译/测试/烧录/日志
-4. 偏差说明
-
-**禁止行为**：
-- ❌ 做侦察工作（那是 Scout 的职责）
-- ❌ 做审查工作（那是 Verifier 的职责）
-- ❌ 跳过验证直接声明完成
-
-#### Verifier Agent
-
-**必须交付**：
-1. 按严重程度排序的风险清单
-2. 未覆盖的边界条件
-3. 逐项审查结论
-4. 最低成本补救建议
-
-**禁止行为**：
-- ❌ 修改任何文件
-- ❌ 编写代码
-- ❌ 补充实现（那是 Builder 的职责）
-
-### 并行保护规则
-
-- **同一时刻只允许一个 Builder 写入**
-- Scout 与 Verifier 默认只读
-- 跨角色只传：目标、约束、候选文件、证据、下一步
-
-### 详细文档
-
-完整的多 Agent 工作流程见 `docs/multi-agent-workflow.md`。
+会话恢复时按顺序读取四文件，回答五问后才能继续工作。详细规则见 `embedded-dev/refs/checklist-mechanism.md`。
 
 ---
 
 ## 串口模拟触发
 
-对于需要外部硬件触发的操作（如按键按下），使用串口模拟触发：
-
-### 模拟按键按下
+对需要外部硬件触发的操作，先通过串口发送模拟命令验证，确认后再改为实际硬件触发。
 
 ```bash
-# 发送按键按下命令
-echo "BUTTON_PRESS" > /dev/ttyUSB0
-
-# 接收响应
-timeout 5 cat /dev/ttyUSB0
+echo "BUTTON_PRESS" > /dev/ttyUSB0    # 模拟按键
+echo "SENSOR_VALUE:1234" > /dev/ttyUSB0 # 模拟传感器
 ```
-
-### 模拟传感器数据
-
-```bash
-# 发送传感器数据
-echo "SENSOR_VALUE:1234" > /dev/ttyUSB0
-
-# 接收响应
-timeout 5 cat /dev/ttyUSB0
-```
-
-### 确认流程
-
-1. 使用串口模拟触发
-2. 观察系统响应
-3. 如果响应正确，再改为实际硬件触发
-4. 记录测试结果到 `docs/testing/pua-test-report.md`
-
----
-
-## 日志记录
-
-使用带时间戳的日志脚本记录开发过程：
-
-### 记录编译日志
-
-```bash
-bash .gd32-agent/log-with-timestamp.sh build SUCCESS "编译完成"
-bash .gd32-agent/log-with-timestamp.sh build FAIL "编译失败"
-```
-
-### 记录烧录日志
-
-```bash
-bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
-bash .gd32-agent/log-with-timestamp.sh flash FAIL "烧录失败"
-```
-
-### 记录调试日志
-
-```bash
-bash .gd32-agent/log-with-timestamp.sh debug SUCCESS "调试完成"
-bash .gd32-agent/log-with-timestamp.sh debug FAIL "调试失败"
-```
-
-### 记录串口日志
-
-```bash
-bash .gd32-agent/log-with-timestamp.sh serial TX "发送数据"
-bash .gd32-agent/log-with-timestamp.sh serial RX "接收数据"
-```
-
-### 日志文件位置
-
-- 日志目录：`.gd32-agent/logs/`
-- 日志文件：`.gd32-agent/logs/agent-YYYYMMDD.log`
-
----
-
-## Bug 修复文档
-
-修复 bug 时，必须提供强有力的证据支持：
-
-### 证据收集
-
-1. **寄存器转储** - 使用 GDB 读取关键寄存器
-2. **串口日志** - 记录串口输出
-3. **代码分析** - 分析相关代码
-
-### Bug 修复流程
-
-1. 发现 bug
-2. 收集证据（寄存器、日志、代码）
-3. 分析根本原因
-4. 修复代码
-5. 验证修复
-6. 记录到 `docs/bugs/bug-fix-template.md`
-
-### 证据示例
-
-```markdown
-## 证据 1：寄存器转储
-
-**时间**：2024-XX-XX XX:XX:XX
-
-| 寄存器 | 期望值 | 实际值 | 说明 |
-|--------|--------|--------|------|
-| USART_SR | 0x00000040 | 0x00000000 | 状态寄存器错误 |
-| USART_DR | 0x000000xx | 0x000000xx | 数据寄存器正确 |
-
-## 证据 2：串口日志
-
-**时间**：2024-XX-XX XX:XX:XX
-
-```
-发送：Hello GD32
-接收：（无响应）
-```
-```
-
----
-
-## User-test 文档
-
-完成工作时，必须书写详细的 user-test 文档：
-
-### 测试内容
-
-1. 基本功能测试
-2. 通信功能测试
-3. 按键功能测试
-4. 定时器测试
-5. ADC 测试
-6. I2C 测试
-7. SPI 测试
-8. 中断测试
-9. 低功耗测试
-10. 稳定性测试
-
-### 测试文档位置
-
-- 模板：`docs/testing/user-test-template.md`
-- 测试报告：`docs/testing/user-test-report.md`
-
-### 测试流程
-
-1. 生成测试文档
-2. 用户手动测试
-3. 记录测试结果
-4. 发现问题则修复
-5. 重新测试直到通过
 
 ---
 
@@ -852,4 +164,4 @@ bash .gd32-agent/log-with-timestamp.sh serial RX "接收数据"
 
 **安全第一**：任何不确定的情况，必须停止并报告，等待用户确认。
 
-**质量保证**：串口模拟验证 → 日志记录 → Bug 证据 → 用户测试
+**深入协议**：证据优先、轮次制管理、多 Agent 分工等详细规则见 `embedded-dev/SKILL.md`。
