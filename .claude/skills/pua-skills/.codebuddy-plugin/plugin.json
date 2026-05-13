@@ -1,0 +1,32 @@
+{
+    "name": "pua",
+    "version": "3.4.5",
+    "description": "PUA Motivator -- forces high-agency follow-through when explicitly requested, after repeated failures, user frustration, passive/giving-up behavior, or unverified completion. Includes corporate/PIP cultural modes and explicit-consent anonymous direct session uploads for collection. Not for normal first-attempt requests.",
+    "author": {
+        "name": "探微安全实验室",
+        "url": "https://github.com/tanweai"
+    },
+    "homepage": "https://github.com/tanweai/pua",
+    "repository": "https://github.com/tanweai/pua",
+    "license": "MIT",
+    "keywords": [
+        "pua",
+        "motivation",
+        "never-give-up",
+        "alibaba",
+        "corporate-culture",
+        "pip",
+        "performance-improvement-plan",
+        "codebuddy",
+        "heartbeat",
+        "cloudflare",
+        "active-users",
+        "upload",
+        "contribute",
+        "jsonl",
+        "anonymous-upload",
+        "direct-upload",
+        "rate-limit"
+    ],
+    "category": "Productivity"
+}

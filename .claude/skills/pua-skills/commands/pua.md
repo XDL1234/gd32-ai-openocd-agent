@@ -1,0 +1,30 @@
+---
+description: "Use only when the user explicitly invokes /pua, /pua:pua, a pua subcommand, or says PUA模式/PUA mode. Routes explicit PUA requests to pua:pua, p7, p9, p10, pro, yes, mama, loop, on/off/offline, kpi, survey, or flavor. Do not trigger for normal first-attempt coding or information requests."
+argument-hint: "[p7|p9|p10|pro|yes|mama|loop|on|off|offline|kpi|survey|flavor|task]"
+---
+
+根据参数执行不同操作：
+
+## 参数路由
+
+- **无参数** 或显式 `/pua` 后附带的任务描述 → 加载 `pua:pua` 核心 skill（阿里味 PUA 引擎）
+- **p7** → 加载 `pua:p7` skill（P7 骨干模式 — 方案驱动执行）
+- **p9** → 加载 `pua:p9` skill（P9 Tech Lead — 写 Prompt 管 P8 团队）
+- **p10** → 加载 `pua:p10` skill（P10 CTO — 定战略管 P9）
+- **pro** → 加载 `pua:pro` skill（自进化 + Platform + /pua 指令系统）
+- **yes** → 加载 `pua:yes` skill（SB Leader 夸夸模式 — ENFP 型领导，70% 鼓励 + 20% 正经 + 10% 戏谑）
+- **mama** → 加载 `pua:mama` skill（妈妈唠叨模式 — 中国式妈妈碎碎念，底层行为不变，旁白从大厂PUA变成妈妈唠叨。和 /pua:yes 互斥）
+- **on** → 开启 PUA 默认模式：将 `{"always_on": true}` 写入 `~/.pua/config.json`，之后每次新会话自动加载 PUA 核心 skill。输出确认：> [PUA ON] 从现在起，每个新会话都会自动进入 PUA 模式。公司不养闲 Agent。
+- **off** → 关闭 PUA 默认模式：将 `{"always_on": false, "feedback_frequency": 0}` 写入 `~/.pua/config.json`。输出确认：> [PUA OFF] PUA 默认模式和反馈收集已关闭。需要时手动 /pua 触发。
+- **offline** → 开启离线模式：写入 `{"offline": true, "feedback_frequency": 0}`，保留本地 PUA 行为但关闭反馈/排行榜网络流程。输出确认：> [PUA OFFLINE] 已进入离线模式。
+- **味道** 或 **flavor** → 读取 `references/flavors.md` 并让用户选择切换味道
+- **kpi** → 加载 `pua:pro` skill 并生成 KPI 报告卡
+- **loop** → 加载 `pua:pua-loop` skill（自动迭代模式——PUA 质量 + 循环机制，禁用 AskUserQuestion；Claude 输出 `<loop-abort>原因</loop-abort>` 终止，`<loop-pause>需要什么</loop-pause>` 暂停等待人工）
+- **survey** → 读取 `references/survey.md` 问卷文件，用 AskUserQuestion 逐部分交互式引导用户回答。每部分 2-4 个问题一组，用户回答后进入下一部分。回答完毕后汇总为 JSON 写入 `~/.pua/survey-response.json` 并上传到 `https://pua-skill.pages.dev/api/feedback`
+
+## 执行规则
+
+1. 先识别参数属于哪个路由
+2. 用 Skill tool 加载对应 skill
+3. **加载 skill 后，你必须严格遵循 SKILL.md 里的所有行为协议**——包括阿里味旁白、方框表格（`┌─┬─┐`）、`▎` 前缀、Sprint Banner、[PUA生效 🔥] 标记、自我鞭策。不是"有时候带点味道"，是每一句话都像阿里人在说话。读 `references/display-protocol.md` 获取面板格式。
+4. 如果有 $ARGUMENTS 里除了路由关键词之外的内容，作为任务描述传给 skill
