@@ -1,17 +1,35 @@
 #!/bin/bash
 # GD32 寄存器调试脚本
 
-# OpenOCD 路径
-OPENOCD="D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 配置文件
-CONFIG=".gd32-agent/openocd.cfg"
+# 加载配置
+if [ -f "$SCRIPT_DIR/config.env" ]; then
+    source "$SCRIPT_DIR/config.env"
+fi
 
-# GDB 路径
-GDB="arm-none-eabi-gdb"
+# OpenOCD 路径：config.env → which → 硬编码 fallback
+resolve_openocd() {
+    if [ -n "$OPENOCD_PATH" ] && [ -f "$OPENOCD_PATH" ]; then
+        echo "$OPENOCD_PATH"
+    elif command -v openocd &> /dev/null; then
+        which openocd
+    elif [ -f "D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe" ]; then
+        echo "D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe"
+    else
+        echo ""
+    fi
+}
 
-# 固件文件
+OPENOCD=$(resolve_openocd)
+GDB="${GDB_PATH:-arm-none-eabi-gdb}"
+CONFIG="${OPENOCD_CFG:-.gd32-agent/openocd.cfg}"
 FIRMWARE="$1"
+
+if [ -z "$OPENOCD" ]; then
+    echo "错误: 未找到 OpenOCD，请在 .gd32-agent/config.env 中设置 OPENOCD_PATH"
+    exit 1
+fi
 
 if [ -z "$FIRMWARE" ]; then
     echo "用法: $0 <固件文件>"
@@ -33,18 +51,14 @@ echo "固件: $FIRMWARE"
 echo "GDB: $GDB"
 echo "=========================================="
 
-# 创建日志目录
 mkdir -p .gd32-agent
 
-# 启动 OpenOCD（后台）
 echo "启动 OpenOCD..."
 "$OPENOCD" -f "$CONFIG" &
 OPENOCD_PID=$!
 
-# 等待 OpenOCD 启动
 sleep 2
 
-# 使用 GDB 读取寄存器
 echo "读取寄存器..."
 "$GDB" "$FIRMWARE" -batch \
     -ex "target remote :3333" \
@@ -53,7 +67,6 @@ echo "读取寄存器..."
     -ex "monitor reg" \
     > .gd32-agent/register-dump.md 2>&1
 
-# 停止 OpenOCD
 echo "停止 OpenOCD..."
 kill $OPENOCD_PID 2>/dev/null
 

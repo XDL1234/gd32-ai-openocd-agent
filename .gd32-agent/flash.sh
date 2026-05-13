@@ -1,14 +1,34 @@
 #!/bin/bash
 # GD32 烧录脚本
 
-# OpenOCD 路径
-OPENOCD="D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 配置文件
-CONFIG=".gd32-agent/openocd.cfg"
+# 加载配置
+if [ -f "$SCRIPT_DIR/config.env" ]; then
+    source "$SCRIPT_DIR/config.env"
+fi
 
-# 固件文件
+# OpenOCD 路径：config.env → which → 硬编码 fallback
+resolve_openocd() {
+    if [ -n "$OPENOCD_PATH" ] && [ -f "$OPENOCD_PATH" ]; then
+        echo "$OPENOCD_PATH"
+    elif command -v openocd &> /dev/null; then
+        which openocd
+    elif [ -f "D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe" ]; then
+        echo "D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe"
+    else
+        echo ""
+    fi
+}
+
+OPENOCD=$(resolve_openocd)
+CONFIG="${OPENOCD_CFG:-.gd32-agent/openocd.cfg}"
 FIRMWARE="$1"
+
+if [ -z "$OPENOCD" ]; then
+    echo "错误: 未找到 OpenOCD，请在 .gd32-agent/config.env 中设置 OPENOCD_PATH"
+    exit 1
+fi
 
 if [ -z "$FIRMWARE" ]; then
     echo "用法: $0 <固件文件>"
@@ -29,7 +49,6 @@ echo "配置: $CONFIG"
 echo "固件: $FIRMWARE"
 echo "=========================================="
 
-# 执行烧录
 "$OPENOCD" -f "$CONFIG" -c "program $FIRMWARE verify reset exit"
 
 if [ $? -eq 0 ]; then
