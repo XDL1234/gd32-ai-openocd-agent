@@ -146,39 +146,50 @@ gd32-agent init
 
 | Skill | 来源 | 功能 |
 |-------|------|------|
-| document-skills | [anthropics/skills](https://github.com/anthropics/skills) | 文档处理 |
-| superpowers-skills | [obra/superpowers](https://github.com/obra/superpowers) | 任务编排 |
-| find-skills | [vercel-labs/skills](https://github.com/vercel-labs/skills) | 技能发现 |
-| pua-skills | [tanweai/pua](https://github.com/tanweai/pua) | AI 代理压力驱动 |
+| embedded-dev | 自定义 | RIPER-5 嵌入式开发协议（证据优先、轮次制、多Agent） |
 | gd32-openocd | 自定义 | 编译、烧录、调试 |
 | hardware-analysis | 自定义 | 硬件分析 |
+
+### 指令层级
+
+```
+L1 — CLAUDE.md：安全红线 + 路径配置 + 核心流程（每次会话加载）
+L2 — embedded-dev/SKILL.md：完整 RIPER-5 开发协议（Skill 触发时加载）
+L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模板等）
+```
 
 ### 目录结构
 
 ```
 your-gd32-project/
 ├── hardware/
-│   ├── hardware.md          # 硬件文档
+│   ├── hardware.md          # 硬件文档（事实源）
 │   └── 硬件资源表.md        # 硬件资源记录（引脚、DMA、中断）
 ├── workflow/
 │   └── development-flow.md  # 开发流程
 ├── docs/
-│   ├── analysis/            # 分析文档
-│   ├── tasks/               # 任务文档
-│   ├── reviews/             # 审查文档
-│   ├── bugs/                # Bug 文档
-│   ├── testing/             # 测试文档
 │   ├── 编辑清单.md          # 代码修改记录（会话恢复）
 │   ├── 研究发现.md          # 搜索结果记录（会话恢复）
 │   └── 项目规划清单.md      # 项目进度记录（会话恢复）
+├── embedded-dev/
+│   ├── SKILL.md             # RIPER-5 完整协议
+│   ├── refs/                # 参考文档（API 速查、编码规范等）
+│   └── modes/               # 扩展模式（比赛、网表查阅等）
 ├── .gd32-agent/
+│   ├── config.env           # 工具路径配置
 │   ├── openocd.cfg          # OpenOCD 配置
 │   ├── check-env.sh         # 环境检查
 │   ├── scan-project.sh      # 工程扫描
+│   ├── build.sh             # 编译脚本
 │   ├── flash.sh             # 烧录脚本
 │   ├── serial.sh            # 串口脚本
 │   ├── debug.sh             # 调试脚本
+│   ├── gen-openocd-cfg.sh   # 自动生成 OpenOCD 配置
+│   ├── verify-hardware.sh   # 硬件一致性检查
 │   └── log-with-timestamp.sh # 日志脚本
+├── templates/
+│   ├── project/gd32f470vet6/ # GD32F470VET6 工程模板
+│   └── *.md                  # 四文件模板
 └── .claude/
     └── skills/              # Skills 目录
 ```
@@ -238,9 +249,9 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 ## 文档
 
 - [用户指南](./docs/user-guide.md) - 详细的使用说明
-- [方案设计](./docs/方案设计.md) - 技术方案设计
-- [任务审查](./docs/task-review.md) - 任务完成情况
-- [需求对比](./docs/需求对比分析.md) - 需求分析
+- [多 Agent 工作流程](./docs/multi-agent-workflow.md) - Scout/Builder/Verifier 分工协作
+- [RIPER-5 开发协议](./embedded-dev/SKILL.md) - 完整嵌入式开发协议
+- [GD32F4xx API 速查](./embedded-dev/refs/gd32f4xx-stdperiph-api.md) - GD32 标准库 API 参考
 
 ## 支持的硬件
 
@@ -275,10 +286,8 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 
 ## 致谢
 
-- [anthropics/skills](https://github.com/anthropics/skills) - 文档处理 Skills
-- [obra/superpowers](https://github.com/obra/superpowers) - 任务编排 Skills
-- [vercel-labs/skills](https://github.com/vercel-labs/skills) - 技能发现
-- [tanweai/pua](https://github.com/tanweai/pua) - AI 代理压力驱动
+- [anthropics/skills](https://github.com/anthropics/skills) - Claude Skills 体系
+- [zhengnianli/EmbedSummary](https://github.com/zhengnianli/EmbedSummary) - 嵌入式开源资源汇总
 
 ## 联系方式
 
