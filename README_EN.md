@@ -22,17 +22,24 @@ GD32 AI Agent is an automation development tool based on Claude Code, specifical
 
 ## Quick Start
 
-### 1. Clone to your project directory
+### 1. Clone gd32-agent repository
+
+```bash
+# Clone to any location (e.g., D:\tools\gd32-agent)
+git clone https://github.com/XDL1234/gd32-agent.git
+```
+
+### 2. Install to your project directory
 
 ```bash
 # Enter your GD32 project directory
 cd /path/to/your-gd32-project
 
-# Clone gd32-agent to current directory
-git clone https://github.com/XDL1234/gd32-agent.git
+# Run install script to copy necessary files to current project directory
+bash /path/to/gd32-agent/install.sh
 ```
 
-### 2. Initialize
+### 3. Initialize
 
 Open Claude Code in your project directory, type:
 
@@ -45,8 +52,6 @@ or
 ```
 Initialize this GD32 project
 ```
-
-> The init command will automatically detect and install necessary files, no need to manually run install.sh
 
 ### 4. Configure Hardware
 

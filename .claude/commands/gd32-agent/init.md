@@ -4,56 +4,22 @@
 
 输入 `gd32-agent init` 进行 GD32 工程初始化。
 
-## 执行流程
+## 前置条件
 
-### Step 0: 自动安装检测
+在运行此指令之前，请确保已经使用 `install.sh` 脚本将必要的文件拷贝到当前工程目录：
 
-首先检测当前目录是否已安装 GD32 AI Agent 的必要文件。如果没有，自动从克隆的仓库中复制。
-
-**检测是否已安装**：
 ```bash
-# 检查必要文件是否存在
-if [ ! -f ".gd32-agent/check-env.sh" ] || [ ! -f ".gd32-agent/build.sh" ]; then
-    echo "检测到 GD32 AI Agent 未安装，正在自动安装..."
+# 克隆 gd32-agent 仓库到任意位置
+git clone https://github.com/XDL1234/gd32-agent.git
 
-    # 查找 gd32-agent 仓库位置
-    # 可能在当前目录的子目录中，或者用户已克隆到其他位置
-    AGENT_DIR=""
+# 进入你的工程目录
+cd /path/to/your-project
 
-    # 检查当前目录下是否有 gd32-agent 文件夹
-    if [ -d "gd32-agent" ] && [ -f "gd32-agent/install.sh" ]; then
-        AGENT_DIR="gd32-agent"
-    # 检查上级目录
-    elif [ -f "../gd32-agent/install.sh" ]; then
-        AGENT_DIR="../gd32-agent"
-    # 检查环境变量
-    elif [ -n "$GD32_AGENT_PATH" ] && [ -f "$GD32_AGENT_PATH/install.sh" ]; then
-        AGENT_DIR="$GD32_AGENT_PATH"
-    fi
-
-    if [ -n "$AGENT_DIR" ]; then
-        echo "找到 gd32-agent 仓库: $AGENT_DIR"
-        bash "$AGENT_DIR/install.sh"
-    else
-        echo "❌ 未找到 gd32-agent 仓库"
-        echo ""
-        echo "请先克隆 gd32-agent 仓库："
-        echo "  git clone https://github.com/XDL1234/gd32-agent.git"
-        echo ""
-        echo "然后将克隆的文件夹放到以下位置之一："
-        echo "  1. 当前工程目录下（gd32-agent/）"
-        echo "  2. 上级目录（../gd32-agent/）"
-        echo "  3. 或设置环境变量 GD32_AGENT_PATH 指向仓库路径"
-        echo ""
-        echo "完成后再次运行: gd32-agent init"
-        exit 1
-    fi
-else
-    echo "✅ GD32 AI Agent 已安装"
-fi
+# 运行安装脚本，将文件拷贝到当前工程目录
+bash /path/to/gd32-agent/install.sh
 ```
 
-**安装完成后继续执行后续步骤。**
+## 执行流程
 
 ### Step 1: 环境配置检查
 
