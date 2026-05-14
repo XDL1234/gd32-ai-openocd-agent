@@ -84,8 +84,16 @@ if [ -n "$STARTUP_FILES" ]; then
         CHIP_SERIES="GD32F4xx"
         echo "✅ 芯片系列: $CHIP_SERIES"
         echo "   依据: 启动文件 $STARTUP_NAME"
-    elif [[ "$STARTUP_NAME" == *"gd32f103"* ]]; then
+    elif [[ "$STARTUP_NAME" == *"gd32f30"* ]] || [[ "$STARTUP_NAME" == *"gd32f303"* ]]; then
+        CHIP_SERIES="GD32F3xx"
+        echo "✅ 芯片系列: $CHIP_SERIES"
+        echo "   依据: 启动文件 $STARTUP_NAME"
+    elif [[ "$STARTUP_NAME" == *"gd32f10"* ]] || [[ "$STARTUP_NAME" == *"gd32f103"* ]]; then
         CHIP_SERIES="GD32F1xx"
+        echo "✅ 芯片系列: $CHIP_SERIES"
+        echo "   依据: 启动文件 $STARTUP_NAME"
+    elif [[ "$STARTUP_NAME" == *"gd32e23"* ]] || [[ "$STARTUP_NAME" == *"gd32e2"* ]]; then
+        CHIP_SERIES="GD32E2xx"
         echo "✅ 芯片系列: $CHIP_SERIES"
         echo "   依据: 启动文件 $STARTUP_NAME"
     fi
@@ -94,12 +102,20 @@ fi
 # 从链接脚本识别
 if [ -n "$LINKER_FILES" ]; then
     LINKER_NAME=$(basename "$LINKER_FILES" | head -1)
-    if [[ "$LINKER_NAME" == *"gd32f470"* ]]; then
-        CHIP_MODEL="GD32F470"
+    if [[ "$LINKER_NAME" == *"gd32f470"* ]] || [[ "$LINKER_NAME" == *"gd32f450"* ]]; then
+        CHIP_MODEL="GD32F4xx"
         echo "✅ 芯片型号: $CHIP_MODEL"
         echo "   依据: 链接脚本 $LINKER_NAME"
-    elif [[ "$LINKER_NAME" == *"gd32f103"* ]]; then
-        CHIP_MODEL="GD32F103"
+    elif [[ "$LINKER_NAME" == *"gd32f303"* ]] || [[ "$LINKER_NAME" == *"gd32f30"* ]]; then
+        CHIP_MODEL="GD32F3xx"
+        echo "✅ 芯片型号: $CHIP_MODEL"
+        echo "   依据: 链接脚本 $LINKER_NAME"
+    elif [[ "$LINKER_NAME" == *"gd32f103"* ]] || [[ "$LINKER_NAME" == *"gd32f10"* ]]; then
+        CHIP_MODEL="GD32F1xx"
+        echo "✅ 芯片型号: $CHIP_MODEL"
+        echo "   依据: 链接脚本 $LINKER_NAME"
+    elif [[ "$LINKER_NAME" == *"gd32e23"* ]] || [[ "$LINKER_NAME" == *"gd32e2"* ]]; then
+        CHIP_MODEL="GD32E2xx"
         echo "✅ 芯片型号: $CHIP_MODEL"
         echo "   依据: 链接脚本 $LINKER_NAME"
     fi

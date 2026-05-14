@@ -114,18 +114,27 @@ gd32-agent init
 
 ```markdown
 ## MCU 信息
-- 芯片型号：GD32F470VET6
-- 芯片系列：GD32F4xx
+
+| 参数 | 值 |
+|------|------|
+| 芯片型号 | GD32F470VET6 |
+| 芯片系列 | GD32F4xx |
 
 ## 下载调试接口
-- LINK 类型：DAPLink
-- 接口协议：SWD
+
+| 参数 | 值 |
+|------|------|
+| LINK 类型 | DAPLink |
+| 接口协议 | SWD |
 
 ## 串口输出
-- 串口号：USART0
-- TX：PA9
-- RX：PA10
-- 波特率：115200
+
+| 参数 | 值 |
+|------|------|
+| 串口号 | USART0 |
+| TX | PA9 |
+| RX | PA10 |
+| 波特率 | 115200 |
 ```
 
 ### 5. 配置串口（按平台）
@@ -359,11 +368,13 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 
 ### 芯片系列
 
-- GD32F1xx
-- GD32F3xx
-- GD32F4xx
-- GD32E2xx
-- GD32VF103
+| 系列 | OpenOCD Target（兼容） | 自动扫描识别 | 状态 |
+|------|----------------------|:---:|------|
+| GD32F1xx | stm32f1x.cfg | ✅ | 完整支持 |
+| GD32F3xx | stm32f3x.cfg | ✅ | 完整支持 |
+| GD32F4xx | stm32f4x.cfg | ✅ | 完整支持 |
+| GD32E2xx | stm32f0x.cfg | ✅ | 完整支持 |
+| GD32VF103 | — | ❌ | RISC-V 架构，需手动配置 OpenOCD |
 
 ### 调试器
 

@@ -214,6 +214,8 @@ Agent 根据 Bug 涉及的外设自动生成此文件：
 | document-skills/docx | Word 文档创建、读取、编辑 | "word"、"docx"、"文档" 等 |
 | document-skills/pptx | PPT 演示文稿处理 | "ppt"、"幻灯片" 等 |
 | document-skills/xlsx | Excel 表格处理 | "excel"、"表格" 等 |
+
+> **PDF/Word 读取说明**：Claude Code 的 `Read` 工具可直接读取 PDF 和图片文件。document-skills 在需要高级操作（合并、拆分、OCR、批量提取表格、创建新文档）时使用，简单读取时 `Read` 工具即可。
 | superpowers/systematic-debugging | 系统化调试（根因分析） | "调试"、"排查"、"bug" 等 |
 | superpowers/brainstorming | 头脑风暴/方案设计 | "头脑风暴"、"方案设计" 等 |
 | superpowers/writing-plans | 多步骤任务计划编写 | "写计划"、"任务拆解" 等 |
