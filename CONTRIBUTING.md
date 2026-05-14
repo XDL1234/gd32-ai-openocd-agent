@@ -6,14 +6,14 @@
 
 ### 报告 Bug
 
-1. 在 [GitHub Issues](https://github.com/XDL1234/gd32-ai-openocd-agent/issues) 创建一个新 Issue
+1. 在 [GitHub Issues](https://github.com/XDL1234/gd32-agent/issues) 创建一个新 Issue
 2. 使用 Bug 报告模板
 3. 提供详细的复现步骤
 4. 附上相关的日志和截图
 
 ### 提交功能请求
 
-1. 在 [GitHub Issues](https://github.com/XDL1234/gd32-ai-openocd-agent/issues) 创建一个新 Issue
+1. 在 [GitHub Issues](https://github.com/XDL1234/gd32-agent/issues) 创建一个新 Issue
 2. 使用功能请求模板
 3. 详细描述你想要的功能
 4. 说明使用场景
@@ -131,7 +131,7 @@ Closes #123
 ## 联系方式
 
 - GitHub: [XDL1234](https://github.com/XDL1234)
-- Issues: [GitHub Issues](https://github.com/XDL1234/gd32-ai-openocd-agent/issues)
+- Issues: [GitHub Issues](https://github.com/XDL1234/gd32-agent/issues)
 
 ## 许可证
 

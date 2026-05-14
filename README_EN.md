@@ -59,21 +59,30 @@ Edit `hardware/硬件资源表.md`, fill in your hardware information:
 
 ```markdown
 ## MCU Information
-- Chip Model: GD32F470VET6
-- Chip Series: GD32F4xx
+
+| Parameter | Value |
+|-----------|-------|
+| Chip Model | GD32F470VET6 |
+| Chip Series | GD32F4xx |
 
 ## Debug Interface
-- LINK Type: DAPLink
-- Protocol: SWD
+
+| Parameter | Value |
+|-----------|-------|
+| LINK Type | DAPLink |
+| Protocol | SWD |
 
 ## Serial Output
-- Serial Port: USART0
-- TX: PA9
-- RX: PA10
-- Baudrate: 115200
+
+| Parameter | Value |
+|-----------|-------|
+| Serial Port | USART0 |
+| TX | PA9 |
+| RX | PA10 |
+| Baudrate | 115200 |
 ```
 
-### 4. Start Development
+### 5. Start Development
 
 ```
 Help me implement USART0 boot log printing, and verify with flash
@@ -144,21 +153,27 @@ Detailed multi-agent workflow: `docs/multi-agent-workflow.md`
 
 ### Skills System
 
-| Skill | Source | Function |
-|-------|--------|----------|
-| document-skills | [anthropics/skills](https://github.com/anthropics/skills) | Document Processing |
-| superpowers-skills | [obra/superpowers](https://github.com/obra/superpowers) | Task Orchestration |
-| find-skills | [vercel-labs/skills](https://github.com/vercel-labs/skills) | Skill Discovery |
-| pua-skills | [tanweai/pua](https://github.com/tanweai/pua) | AI Agent Pressure Drive |
-| gd32-openocd | Custom | Build, Flash, Debug |
-| hardware-analysis | Custom | Hardware Analysis |
+| Skill | Source | Function | Trigger |
+|-------|--------|----------|---------|
+| embedded-dev | Custom | RIPER-5 Embedded Development Protocol | 58 trigger words (auto) |
+| gd32-openocd | Custom | Build, Flash, Debug | Manual |
+| hardware-analysis | Custom | Hardware Analysis | Manual |
+| document-skills | [anthropics/skills](https://github.com/anthropics/skills) | PDF/Word/PPT/Excel Processing | "pdf", "word", "ppt", "excel" etc. |
+| superpowers | [obra/superpowers](https://github.com/obra/superpowers) | Systematic Debugging, Brainstorming, Planning, Parallel Agents | "debug", "brainstorm", "plan" etc. |
+
+### Instruction Hierarchy
+
+```
+L1 — CLAUDE.md: Safety rules + path config + core flow (loaded every session)
+L2 — embedded-dev/SKILL.md: Complete RIPER-5 protocol (loaded when Skill triggers)
+L3 — embedded-dev/refs/: On-demand reference docs (API reference, templates, etc.)
+```
 
 ### Directory Structure
 
 ```
 your-gd32-project/
 ├── hardware/
-│   ├── hardware.md          # (Deprecated, use 硬件资源表.md)
 │   └── 硬件资源表.md        # Hardware Resource Table (pins, DMA, interrupts)
 ├── workflow/
 │   └── development-flow.md  # Development Flow
@@ -172,12 +187,18 @@ your-gd32-project/
 │   ├── 研究发现.md          # Research Findings (session recovery)
 │   └── 项目规划清单.md      # Project Planning (session recovery)
 ├── .gd32-agent/
+│   ├── config.env           # Configuration
 │   ├── openocd.cfg          # OpenOCD Config
 │   ├── check-env.sh         # Environment Check
 │   ├── scan-project.sh      # Project Scan
+│   ├── build.sh             # Build Script
 │   ├── flash.sh             # Flash Script
 │   ├── serial.sh            # Serial Script
-│   ├── debug.sh             # Debug Script
+│   ├── debug.sh             # Debug Script (general/peripheral/batch modes)
+│   ├── debug-loop.sh        # Auto Debug Loop (build→flash→registers→serial)
+│   ├── gen-openocd-cfg.sh   # Auto-generate OpenOCD Config
+│   ├── verify-hardware.sh   # Hardware Consistency Check
+│   ├── detect-serial.sh     # Serial Port Auto-detection
 │   └── log-with-timestamp.sh # Log Script
 └── .claude/
     └── skills/              # Skills Directory
@@ -238,9 +259,9 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "Flash completed"
 ## Documentation
 
 - [User Guide](./docs/user-guide.md) - Detailed usage instructions
-- [Design Document](./docs/方案设计.md) - Technical design
-- [Task Review](./docs/task-review.md) - Task completion status
-- [Requirements Analysis](./docs/需求对比分析.md) - Requirements analysis
+- [RIPER-5 Protocol](./embedded-dev/SKILL.md) - Complete embedded development protocol
+- [GD32F4xx API Reference](./embedded-dev/refs/gd32f4xx-stdperiph-api.md) - GD32 Standard Library API
+- [Multi-Agent Workflow](./embedded-dev/refs/vibe-workflow.md) - Scout/Builder/Verifier collaboration
 
 ## Supported Hardware
 
@@ -275,10 +296,8 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 ## Acknowledgments
 
-- [anthropics/skills](https://github.com/anthropics/skills) - Document Processing Skills
-- [obra/superpowers](https://github.com/obra/superpowers) - Task Orchestration Skills
-- [vercel-labs/skills](https://github.com/vercel-labs/skills) - Skill Discovery
-- [tanweai/pua](https://github.com/tanweai/pua) - AI Agent Pressure Drive
+- [anthropics/skills](https://github.com/anthropics/skills) - Claude Skills System
+- [zhengnianli/EmbedSummary](https://github.com/zhengnianli/EmbedSummary) - Embedded Open Source Resources
 
 ## Contact
 

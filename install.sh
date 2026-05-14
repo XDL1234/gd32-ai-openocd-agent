@@ -176,7 +176,7 @@ mkdir -p .claude/skills
 # 复制 .gd32-agent 脚本
 echo "[2/9] 复制 gd32-agent 脚本..."
 for f in check-env.sh scan-project.sh build.sh flash.sh serial.sh debug.sh \
-         log-with-timestamp.sh gen-openocd-cfg.sh verify-hardware.sh detect-serial.sh; do
+         debug-loop.sh log-with-timestamp.sh gen-openocd-cfg.sh verify-hardware.sh detect-serial.sh; do
     if [ -f "$SCRIPT_DIR/.gd32-agent/$f" ]; then
         cp "$SCRIPT_DIR/.gd32-agent/$f" .gd32-agent/
     fi

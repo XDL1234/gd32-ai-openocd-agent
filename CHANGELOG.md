@@ -7,14 +7,12 @@
 
 ## [未发布]
 
-### 新增
-- 待添加
-
 ### 变更
-- 待添加
-
-### 修复
-- 待添加
+- 删除废弃的 `hardware/hardware.md`，统一使用 `hardware/硬件资源表.md`
+- 更新 README_EN.md：修复步骤编号重复、硬件配置改为表格格式、补充完整脚本列表和 Skills 表格
+- 更新 CONTRIBUTING.md：修复旧仓库名 `gd32-ai-openocd-agent` → `gd32-agent`
+- 更新 `docs/user-guide.md`：安装步骤改为 install.sh 方式、硬件配置改为表格格式、补充全部脚本说明
+- `install.sh` 补充 `debug-loop.sh` 的复制
 
 ## [1.0.0] - 2026-05-13
 

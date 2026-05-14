@@ -241,7 +241,6 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 ```
 your-gd32-project/
 ├── hardware/
-│   ├── hardware.md          # （已废弃，统一使用硬件资源表.md）
 │   └── 硬件资源表.md        # 硬件资源记录（引脚、DMA、中断）
 ├── workflow/
 │   └── development-flow.md  # 开发流程
