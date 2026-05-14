@@ -196,28 +196,12 @@ for cmd in "$SCRIPT_DIR"/.claude/commands/gd32-agent/*.md; do
     [ -f "$cmd" ] && cp "$cmd" .claude/commands/gd32-agent/
 done
 
-# 复制 Skills（gd32-openocd、hardware-analysis）
+# 复制 Skills（gd32-openocd、hardware-analysis、document-skills、superpowers-skills）
 echo "[4/9] 复制 Skills..."
 cp -r "$SCRIPT_DIR/.claude/skills/gd32-openocd" .claude/skills/ 2>/dev/null || true
 cp -r "$SCRIPT_DIR/.claude/skills/hardware-analysis" .claude/skills/ 2>/dev/null || true
-
-# document-skills：只复制文档处理相关的 4 个 Skill
-echo "  复制 document-skills（pdf/docx/pptx/xlsx）..."
-mkdir -p .claude/skills/document-skills/skills
-for doc_skill in pdf docx pptx xlsx; do
-    if [ -d "$SCRIPT_DIR/.claude/skills/document-skills/skills/$doc_skill" ]; then
-        cp -r "$SCRIPT_DIR/.claude/skills/document-skills/skills/$doc_skill" .claude/skills/document-skills/skills/
-    fi
-done
-
-# superpowers-skills：只复制嵌入式开发需要的 Skill
-echo "  复制 superpowers-skills（调试/头脑风暴/计划/验证/并行Agent）..."
-mkdir -p .claude/skills/superpowers-skills/skills
-for sp_skill in systematic-debugging brainstorming writing-plans verification-before-completion dispatching-parallel-agents; do
-    if [ -d "$SCRIPT_DIR/.claude/skills/superpowers-skills/skills/$sp_skill" ]; then
-        cp -r "$SCRIPT_DIR/.claude/skills/superpowers-skills/skills/$sp_skill" .claude/skills/superpowers-skills/skills/
-    fi
-done
+cp -r "$SCRIPT_DIR/.claude/skills/document-skills" .claude/skills/ 2>/dev/null || true
+cp -r "$SCRIPT_DIR/.claude/skills/superpowers-skills" .claude/skills/ 2>/dev/null || true
 
 # 复制 embedded-dev skill
 echo "[5/9] 复制 embedded-dev skill..."
