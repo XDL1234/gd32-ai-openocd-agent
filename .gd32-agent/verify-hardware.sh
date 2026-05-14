@@ -14,9 +14,25 @@ echo "=========================================="
 
 ISSUES=0
 
+# 从表格行中提取第2列的值（| 项目 | 值 | ... |）
+extract_table_value() {
+    echo "$1" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}'
+}
+
 # 从硬件资源表提取芯片型号
-HW_CHIP=$(grep -i "芯片型号\|chip.*model\|MCU" "$HARDWARE_MD" | head -1 | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
-HW_SERIES=$(grep -i "芯片系列\|chip.*series" "$HARDWARE_MD" | head -1 | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+RAW_LINE=$(grep -i "芯片型号\|chip.*model" "$HARDWARE_MD" | grep -v "^#\|^|\s*-" | head -1)
+if echo "$RAW_LINE" | grep -q '|'; then
+    HW_CHIP=$(extract_table_value "$RAW_LINE")
+else
+    HW_CHIP=$(echo "$RAW_LINE" | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+fi
+
+RAW_LINE=$(grep -i "芯片系列\|chip.*series" "$HARDWARE_MD" | grep -v "^#\|^|\s*-" | head -1)
+if echo "$RAW_LINE" | grep -q '|'; then
+    HW_SERIES=$(extract_table_value "$RAW_LINE")
+else
+    HW_SERIES=$(echo "$RAW_LINE" | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+fi
 
 echo "硬件资源表 声明:"
 echo "  芯片型号: $HW_CHIP"

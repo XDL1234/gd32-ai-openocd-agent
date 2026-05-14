@@ -14,14 +14,34 @@ echo "=========================================="
 echo "自动生成 OpenOCD 配置"
 echo "=========================================="
 
+# 从表格行中提取第2列的值（| 项目 | 值 | ... |）
+extract_table_value() {
+    echo "$1" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}'
+}
+
 # 提取 LINK 类型
-LINK_TYPE=$(grep -i "LINK.*类型\|调试器\|debugger" "$HARDWARE_MD" | head -1 | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+RAW_LINE=$(grep -i "LINK.*类型\|调试器\|debugger" "$HARDWARE_MD" | head -1)
+if echo "$RAW_LINE" | grep -q '|'; then
+    LINK_TYPE=$(extract_table_value "$RAW_LINE")
+else
+    LINK_TYPE=$(echo "$RAW_LINE" | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+fi
 
 # 提取芯片系列
-CHIP_SERIES=$(grep -i "芯片系列\|chip.*series" "$HARDWARE_MD" | head -1 | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+RAW_LINE=$(grep -i "芯片系列\|chip.*series" "$HARDWARE_MD" | head -1)
+if echo "$RAW_LINE" | grep -q '|'; then
+    CHIP_SERIES=$(extract_table_value "$RAW_LINE")
+else
+    CHIP_SERIES=$(echo "$RAW_LINE" | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+fi
 
 # 提取下载速度
-ADAPTER_SPEED=$(grep -i "下载速度\|adapter.*speed\|速度" "$HARDWARE_MD" | head -1 | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+RAW_LINE=$(grep -i "下载速度\|adapter.*speed\|速度" "$HARDWARE_MD" | head -1)
+if echo "$RAW_LINE" | grep -q '|'; then
+    ADAPTER_SPEED=$(extract_table_value "$RAW_LINE")
+else
+    ADAPTER_SPEED=$(echo "$RAW_LINE" | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
+fi
 ADAPTER_SPEED="${ADAPTER_SPEED:-10000}"
 
 echo "调试器: $LINK_TYPE"
