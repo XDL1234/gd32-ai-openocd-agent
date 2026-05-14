@@ -226,6 +226,15 @@ for tpl in "hardware/硬件资源表.md:templates/硬件资源表.md" \
     fi
 done
 
+# 跨平台 sed -i
+portable_sed_i() {
+    if [[ "$(uname -s)" == Darwin* ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 # 自动检测工具路径
 echo "[8/9] 检测工具路径..."
 CONFIG_ENV=".gd32-agent/config.env"
@@ -236,8 +245,11 @@ if [ -z "$CURRENT_OPENOCD" ]; then
     DETECTED_OPENOCD=""
     if command -v openocd &> /dev/null; then
         DETECTED_OPENOCD=$(which openocd)
-    elif [ "$OS_TYPE" = "Windows" ]; then
-        for p in "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
+    else
+        for p in "/usr/bin/openocd" \
+                 "/usr/local/bin/openocd" \
+                 "/opt/openocd/bin/openocd" \
+                 "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
                  "C:/openocd/bin/openocd.exe" \
                  "C:/Program Files/openocd/bin/openocd.exe" \
                  "C:/Program Files (x86)/openocd/bin/openocd.exe" \
@@ -251,7 +263,7 @@ if [ -z "$CURRENT_OPENOCD" ]; then
 
     if [ -n "$DETECTED_OPENOCD" ]; then
         echo "  检测到 OpenOCD: $DETECTED_OPENOCD"
-        sed -i "s|^OPENOCD_PATH=.*|OPENOCD_PATH=\"$DETECTED_OPENOCD\"|" "$CONFIG_ENV" 2>/dev/null || true
+        portable_sed_i "s|^OPENOCD_PATH=.*|OPENOCD_PATH=\"$DETECTED_OPENOCD\"|" "$CONFIG_ENV" 2>/dev/null || true
     fi
 fi
 

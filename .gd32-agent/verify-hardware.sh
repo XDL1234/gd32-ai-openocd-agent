@@ -44,8 +44,8 @@ echo ""
 echo "--- 链接脚本检测 ---"
 LD_SCRIPT=$(find . -name "*.ld" -o -name "*.lds" 2>/dev/null | head -1)
 if [ -n "$LD_SCRIPT" ]; then
-    FLASH_SIZE=$(grep -i "FLASH.*LENGTH\|FLASH.*len" "$LD_SCRIPT" | head -1 | grep -oP '\d+[KkMm]' | head -1)
-    RAM_SIZE=$(grep -i "RAM.*LENGTH\|RAM.*len" "$LD_SCRIPT" | head -1 | grep -oP '\d+[KkMm]' | head -1)
+    FLASH_SIZE=$(grep -i "FLASH.*LENGTH\|FLASH.*len" "$LD_SCRIPT" | head -1 | grep -oE '[0-9]+[KkMm]' | head -1)
+    RAM_SIZE=$(grep -i "RAM.*LENGTH\|RAM.*len" "$LD_SCRIPT" | head -1 | grep -oE '[0-9]+[KkMm]' | head -1)
     echo "链接脚本: $LD_SCRIPT"
     echo "  Flash: $FLASH_SIZE"
     echo "  RAM: $RAM_SIZE"
@@ -68,12 +68,12 @@ fi
 echo ""
 echo "--- 编译宏检测 ---"
 if [ -f "CMakeLists.txt" ]; then
-    DEFINE=$(grep -oP 'GD32F\w+' CMakeLists.txt | head -1)
+    DEFINE=$(grep -oE 'GD32F[A-Za-z0-9]+' CMakeLists.txt | head -1)
     if [ -n "$DEFINE" ]; then
         echo "CMakeLists.txt 宏定义: $DEFINE"
     fi
 elif [ -f "Makefile" ]; then
-    DEFINE=$(grep -oP 'GD32F\w+' Makefile | head -1)
+    DEFINE=$(grep -oE 'GD32F[A-Za-z0-9]+' Makefile | head -1)
     if [ -n "$DEFINE" ]; then
         echo "Makefile 宏定义: $DEFINE"
     fi

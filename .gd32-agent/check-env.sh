@@ -34,15 +34,12 @@ find_tool() {
         return 0
     fi
 
-    # Windows: 搜索额外路径
-    if [ "$OS_TYPE" = "Windows" ]; then
-        for p in "${extra_paths[@]}"; do
-            if [ -f "$p" ]; then
-                echo "$p"
-                return 0
-            fi
-        done
-    fi
+    for p in "${extra_paths[@]}"; do
+        if [ -f "$p" ]; then
+            echo "$p"
+            return 0
+        fi
+    done
 
     return 1
 }
@@ -50,6 +47,9 @@ find_tool() {
 # 检查 OpenOCD
 echo "检查 OpenOCD..."
 OPENOCD_RESULT=$(find_tool "openocd" \
+    "/usr/bin/openocd" \
+    "/usr/local/bin/openocd" \
+    "/opt/openocd/bin/openocd" \
     "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
     "C:/Program Files/openocd/bin/openocd.exe" \
     "C:/Program Files (x86)/openocd/bin/openocd.exe" \
@@ -70,6 +70,8 @@ echo ""
 # 检查 GDB
 echo "检查 GDB..."
 GDB_RESULT=$(find_tool "arm-none-eabi-gdb" \
+    "/usr/bin/arm-none-eabi-gdb" \
+    "/usr/local/bin/arm-none-eabi-gdb" \
     "C:/Program Files (x86)/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gdb.exe" \
     "C:/Program Files/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gdb.exe")
 if [ -n "$GDB_RESULT" ]; then
@@ -125,6 +127,8 @@ echo ""
 # 检查 GCC（可选）
 echo "检查 GCC（可选）..."
 GCC_RESULT=$(find_tool "arm-none-eabi-gcc" \
+    "/usr/bin/arm-none-eabi-gcc" \
+    "/usr/local/bin/arm-none-eabi-gcc" \
     "C:/Program Files (x86)/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gcc.exe" \
     "C:/Program Files/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gcc.exe")
 if [ -n "$GCC_RESULT" ]; then

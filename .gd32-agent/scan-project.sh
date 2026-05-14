@@ -182,8 +182,10 @@ if [ -f "$CONFIG_FILE" ]; then
     if [ -z "$CURRENT_OPENOCD" ]; then
         DETECTED_OPENOCD=$(which openocd 2>/dev/null)
         if [ -z "$DETECTED_OPENOCD" ]; then
-            # 常见 Windows 安装路径
             for candidate in \
+                "/usr/bin/openocd" \
+                "/usr/local/bin/openocd" \
+                "/opt/openocd/bin/openocd" \
                 "/c/Program Files/openocd/bin/openocd.exe" \
                 "/c/Program Files (x86)/openocd/bin/openocd.exe" \
                 "/d/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \

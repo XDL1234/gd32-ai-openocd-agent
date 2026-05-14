@@ -22,10 +22,65 @@ GD32 AI Agent 是一个基于 Claude Code 的自动化开发工具，专为 GD32
 
 ## 快速开始
 
+### 前置条件
+
+<details>
+<summary><b>Windows 用户</b></summary>
+
+1. **安装 Git Bash**（推荐 [Git for Windows](https://gitforwindows.org/)，自带 bash 环境）
+2. **安装 Claude Code**（CLI 或桌面版）
+3. **安装 OpenOCD**（推荐 [xpack-openocd](https://github.com/xpack-dev-tools/openocd-xpack/releases)，解压到 `D:/openocd/` 或 `C:/openocd/`）
+4. **安装 ARM GCC 工具链**（[GNU Arm Embedded Toolchain](https://developer.arm.com/downloads/-/gnu-rm)，安装后确保 `arm-none-eabi-gcc` 在 PATH 中）
+5. **安装 Python 3**（[python.org](https://www.python.org/downloads/)，安装时勾选"Add to PATH"）
+6. **安装 pyserial**：`pip install pyserial`
+
+> 所有 `.gd32-agent/*.sh` 脚本需要在 **Git Bash** 或 **MSYS2** 环境下运行，不支持 PowerShell 或 CMD。
+
+</details>
+
+<details>
+<summary><b>Linux 用户（Ubuntu/Debian）</b></summary>
+
+```bash
+# 安装基础工具
+sudo apt update
+sudo apt install -y git openocd gdb-multiarch gcc-arm-none-eabi python3 python3-pip
+
+# 安装 pyserial
+pip3 install pyserial
+
+# 创建 GDB 符号链接（部分发行版需要）
+sudo ln -sf /usr/bin/gdb-multiarch /usr/local/bin/arm-none-eabi-gdb
+```
+
+> Linux 上串口设备为 `/dev/ttyUSB0` 或 `/dev/ttyACM0`。如果遇到权限问题：
+> ```bash
+> sudo usermod -aG dialout $USER  # 加入 dialout 组
+> # 重新登录后生效
+> ```
+
+</details>
+
+<details>
+<summary><b>macOS 用户</b></summary>
+
+```bash
+# 使用 Homebrew 安装
+brew install open-ocd
+brew install --cask gcc-arm-embedded
+brew install python3 coreutils  # coreutils 提供 gtimeout
+
+# 安装 pyserial
+pip3 install pyserial
+```
+
+> macOS 上串口设备为 `/dev/tty.usbserial-*` 或 `/dev/tty.usbmodem-*`。
+
+</details>
+
 ### 1. 克隆 gd32-agent 仓库
 
 ```bash
-# 克隆到任意位置（如 D:\tools\gd32-agent）
 git clone https://github.com/XDL1234/gd32-agent.git
 ```
 
@@ -73,7 +128,24 @@ gd32-agent init
 - 波特率：115200
 ```
 
-### 5. 开始开发
+### 5. 配置串口（按平台）
+
+编辑 `.gd32-agent/config.env`：
+
+```bash
+# Windows
+SERIAL_PORT="COM15"
+
+# Linux
+SERIAL_PORT="/dev/ttyUSB0"
+
+# macOS
+SERIAL_PORT="/dev/tty.usbserial-1420"
+```
+
+> `gd32-agent init` 会自动检测串口，通常无需手动配置。
+
+### 6. 开始开发
 
 ```
 帮我实现 USART0 打印启动日志，并烧录验证
@@ -229,7 +301,17 @@ bash .gd32-agent/flash.sh build/app.hex
 ### 串口观察
 
 ```bash
+# Windows
 bash .gd32-agent/serial.sh COM15 115200 10
+
+# Linux
+bash .gd32-agent/serial.sh /dev/ttyUSB0 115200 10
+
+# macOS
+bash .gd32-agent/serial.sh /dev/tty.usbserial-1420 115200 10
+
+# 或直接使用 config.env 中的配置
+bash .gd32-agent/serial.sh
 ```
 
 ### 寄存器调试
@@ -295,6 +377,34 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 - Make
 - Keil MDK
 - IAR
+
+## 平台支持
+
+### 操作系统兼容性
+
+| 功能 | Windows (Git Bash) | Linux | macOS |
+|------|:---:|:---:|:---:|
+| 安装 (`install.sh`) | ✅ | ✅ | ✅ |
+| 环境检查 (`check-env.sh`) | ✅ | ✅ | ✅ |
+| 工程扫描 (`scan-project.sh`) | ✅ | ✅ | ✅ |
+| 编译 (`build.sh`) | ✅ | ✅ | ✅ |
+| 烧录 (`flash.sh`) | ✅ | ✅ | ✅ |
+| 串口观察 (`serial.sh`) | ✅ | ✅ | ✅ |
+| 寄存器调试 (`debug.sh`) | ✅ | ✅ | ✅ |
+| 自动调试循环 (`debug-loop.sh`) | ✅ | ✅ | ✅ |
+| 串口检测 (`detect-serial.sh`) | ✅ | ✅ | ✅ |
+| Keil MDK 编译 | ✅ | ❌ | ❌ |
+| IAR 编译 | ✅ | ❌ | ❌ |
+
+### 平台差异速查
+
+| 配置项 | Windows | Linux | macOS |
+|--------|---------|-------|-------|
+| Shell 环境 | Git Bash / MSYS2 | bash / zsh | zsh / bash |
+| 串口设备名 | `COM3`, `COM15` | `/dev/ttyUSB0`, `/dev/ttyACM0` | `/dev/tty.usbserial-*` |
+| OpenOCD 路径 | `D:/openocd/.../openocd.exe` | `/usr/bin/openocd` | `brew --prefix`/`openocd` |
+| Python 命令 | `python` 或 `python3` | `python3` | `python3` |
+| 串口权限 | 无需额外配置 | 需加入 `dialout` 组 | 通常无需配置 |
 
 ## 贡献
 

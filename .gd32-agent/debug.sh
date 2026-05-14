@@ -18,6 +18,9 @@ resolve_openocd() {
         which openocd
     else
         for candidate in \
+            "/usr/bin/openocd" \
+            "/usr/local/bin/openocd" \
+            "/opt/openocd/bin/openocd" \
             "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
             "C:/Program Files/openocd/bin/openocd.exe" \
             "C:/Program Files (x86)/openocd/bin/openocd.exe" \

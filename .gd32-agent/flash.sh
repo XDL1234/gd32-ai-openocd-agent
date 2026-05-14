@@ -15,8 +15,10 @@ resolve_openocd() {
     elif command -v openocd &> /dev/null; then
         which openocd
     else
-        # Windows 常见安装路径
         for candidate in \
+            "/usr/bin/openocd" \
+            "/usr/local/bin/openocd" \
+            "/opt/openocd/bin/openocd" \
             "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
             "C:/Program Files/openocd/bin/openocd.exe" \
             "C:/Program Files (x86)/openocd/bin/openocd.exe" \
