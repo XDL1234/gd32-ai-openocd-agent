@@ -123,7 +123,6 @@ fi
 USER_CONFIG_FILES=(
     ".gd32-agent/config.env"
     ".gd32-agent/openocd.cfg"
-    "hardware/hardware.md"
     "hardware/硬件资源表.md"
     "docs/编辑清单.md"
     "docs/研究发现.md"
@@ -295,12 +294,12 @@ echo "  - embedded-dev/      (开发协议 Skill)"
 echo ""
 if [ "$MODE" = "update" ]; then
     echo "已更新: 脚本、命令、Skills、协议"
-    echo "已保留: config.env、openocd.cfg、hardware.md 等用户配置"
+    echo "已保留: config.env、openocd.cfg、硬件资源表.md 等用户配置"
 else
     echo "下一步："
     echo "  1. 在 Claude Code 中输入: gd32-agent init"
     echo "     (初始化向导会自动配置调试器和串口)"
-    echo "  2. 或手动编辑 .gd32-agent/config.env 和 hardware/hardware.md"
+    echo "  2. 或手动编辑 .gd32-agent/config.env 和 hardware/硬件资源表.md"
     echo "  3. 开始开发！"
 fi
 echo ""

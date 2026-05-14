@@ -1,7 +1,7 @@
 #!/bin/bash
-# 根据 hardware/hardware.md 自动生成 openocd.cfg
+# 根据 hardware/硬件资源表.md 自动生成 openocd.cfg
 
-HARDWARE_MD="hardware/hardware.md"
+HARDWARE_MD="hardware/硬件资源表.md"
 OUTPUT_CFG=".gd32-agent/openocd.cfg"
 
 if [ ! -f "$HARDWARE_MD" ]; then

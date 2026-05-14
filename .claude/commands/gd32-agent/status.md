@@ -18,7 +18,7 @@ cat .gd32-agent/openocd.cfg 2>/dev/null | head -5
 
 ### Step 2: 读取硬件信息
 
-读取 `hardware/hardware.md`，提取芯片型号、调试器、串口配置。
+读取 `hardware/硬件资源表.md`，提取芯片型号、调试器、串口配置。
 
 ### Step 3: 检查工程状态
 

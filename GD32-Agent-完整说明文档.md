@@ -139,7 +139,7 @@ bash /path/to/gd32-agent/install.sh
 
 #### 第三步：编辑硬件文档
 
-编辑 `hardware/hardware.md`，填写你的硬件信息（表格形式）：
+编辑 `hardware/硬件资源表.md`，填写你的硬件信息（表格形式）：
 
 ```markdown
 ## MCU 信息
@@ -243,7 +243,7 @@ L1 — CLAUDE.md（顶层）
 **冲突处理规则**：
 - L1 与 L2 冲突 → 以 L2 为准（L1 只是摘要）
 - L2 与 L3 冲突 → 以 L2 为准
-- 任何层级与 `hardware/hardware.md` 冲突 → 停止执行，报告用户
+- 任何层级与 `hardware/硬件资源表.md` 冲突 → 停止执行，报告用户
 
 ---
 
@@ -510,7 +510,7 @@ bash .gd32-agent/debug-loop.sh
 ### 7.2 工作流程
 
 ```
-读取 hardware/hardware.md
+读取 hardware/硬件资源表.md
         ↓
 扫描工程文件（启动文件、链接脚本、头文件、CMakeLists.txt）
         ↓
@@ -1156,7 +1156,7 @@ bash .gd32-agent/debug.sh --batch .gd32-agent/periph-addrs.txt build/app.elf
 bash .gd32-agent/gen-openocd-cfg.sh
 ```
 
-读取 `hardware/hardware.md`，根据调试器类型和芯片系列自动生成 `.gd32-agent/openocd.cfg`。
+读取 `hardware/硬件资源表.md`，根据调试器类型和芯片系列自动生成 `.gd32-agent/openocd.cfg`。
 
 **映射规则**：
 
@@ -1179,7 +1179,7 @@ bash .gd32-agent/gen-openocd-cfg.sh
 bash .gd32-agent/verify-hardware.sh
 ```
 
-扫描工程中的启动文件、链接脚本、头文件，提取芯片信息，与 `hardware/hardware.md` 对比，输出一致性报告。
+扫描工程中的启动文件、链接脚本、头文件，提取芯片信息，与 `hardware/硬件资源表.md` 对比，输出一致性报告。
 
 ### 13.10 log-with-timestamp.sh — 日志记录
 
@@ -1539,7 +1539,7 @@ openocd -f .gd32-agent/openocd.cfg -c "init; halt; flash info 0; exit"
 检查顺序：
 1. GPIO 配置（TX/RX 引脚、AF 复用功能）
 2. 时钟配置（RCU 是否使能了 USART 和 GPIO 时钟）
-3. 波特率（与 `hardware/hardware.md` 中配置一致）
+3. 波特率（与 `hardware/硬件资源表.md` 中配置一致）
 4. printf 重定向（`retarget.c` 中的 `fputc` 函数）
 
 ### 21.3 编译失败
@@ -1726,8 +1726,7 @@ check tools, 检查所有mcp工具
 your-gd32-project/
 ├── CLAUDE.md                           # L1：Agent 顶层规则（~150行）
 ├── hardware/
-│   ├── hardware.md                     # 硬件事实源（用户填写）
-│   └── 硬件资源表.md                   # 四文件之一：硬件资源记录
+│   └── 硬件资源表.md                   # 硬件事实源 + 四文件之一（芯片、调试器、引脚、DMA、中断）
 ├── workflow/
 │   └── development-flow.md             # 开发流程规则
 ├── docs/

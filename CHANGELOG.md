@@ -27,7 +27,7 @@
 - 串口脚本 `serial.sh`
 - 调试脚本 `debug.sh`
 - OpenOCD 配置文件 `openocd.cfg`
-- 硬件文档模板 `hardware/hardware.md`
+- 硬件文档模板 `hardware/硬件资源表.md`（统一硬件信息入口）
 - 开发流程文档 `workflow/development-flow.md`
 - 任务需求文档模板 `docs/tasks/task-requirements.md`
 - 任务计划文档模板 `docs/tasks/task-plan.md`

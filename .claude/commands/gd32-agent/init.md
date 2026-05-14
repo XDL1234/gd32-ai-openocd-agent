@@ -81,7 +81,7 @@ bash .gd32-agent/scan-project.sh
 
 扫描完成后，**主动向用户确认以下信息**（以选择题形式）：
 
-1. **调试器类型**（如果 hardware.md 未填写）：
+1. **调试器类型**（如果硬件资源表未填写）：
    - [1] DAPLink
    - [2] ST-Link
    - [3] J-Link
@@ -99,7 +99,7 @@ bash .gd32-agent/scan-project.sh
   ```bash
   bash .gd32-agent/gen-openocd-cfg.sh
   ```
-- 更新 `hardware/hardware.md`（芯片型号、调试器、串口配置）
+- 更新 `hardware/硬件资源表.md`（芯片型号、调试器、串口配置）
 
 ### Step 3: 生成工程文档
 
@@ -174,7 +174,7 @@ mkdir -p .claude/skills
 
 ### Step 6: 生成文档文件
 
-#### 6.1 hardware/hardware.md
+#### 6.1 hardware/硬件资源表.md
 
 根据扫描结果生成硬件文档（表格形式，方便填写）：
 
@@ -299,7 +299,7 @@ cp -r .claude/skills/* user-project/.claude/skills/
 - .claude/skills/
 
 ## 创建的文件
-- hardware/hardware.md
+- hardware/硬件资源表.md
 - workflow/development-flow.md
 - docs/analysis/project-scan-report.md
 - .claude/skills/gd32-openocd/SKILL.md
@@ -308,7 +308,7 @@ cp -r .claude/skills/* user-project/.claude/skills/
 - .claude/skills/superpowers-skills/（系统化调试/头脑风暴等）
 
 ## 下一步
-1. 编辑 hardware/hardware.md，填写引脚信息
+1. 编辑 hardware/硬件资源表.md，填写引脚信息
 2. 编辑 workflow/development-flow.md，填写用户需求
 3. 开始开发任务
 ```

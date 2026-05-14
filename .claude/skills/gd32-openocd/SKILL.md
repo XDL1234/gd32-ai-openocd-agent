@@ -16,7 +16,7 @@ allowed-tools: Read, Bash, Write, Glob, Grep
 
 ## 前置条件
 
-1. 已读取 `hardware/hardware.md`
+1. 已读取 `hardware/硬件资源表.md`
 2. 已识别芯片型号
 3. 已生成 OpenOCD 配置
 
@@ -51,8 +51,8 @@ make clean && make 2>&1 | tee .gd32-agent/build.log
 ### 烧录前确认
 
 ```bash
-echo "芯片：$(grep '芯片型号' hardware/hardware.md | cut -d'：' -f2)"
-echo "调试器：$(grep 'LINK 类型' hardware/hardware.md | cut -d'：' -f2)"
+echo "芯片：$(grep '芯片型号' hardware/硬件资源表.md | cut -d'|' -f3 | tr -d ' ')"
+echo "调试器：$(grep 'LINK 类型' hardware/硬件资源表.md | cut -d'|' -f3 | tr -d ' ')"
 echo "固件：build/app.elf"
 ```
 

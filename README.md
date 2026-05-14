@@ -110,7 +110,7 @@ gd32-agent init
 
 ### 4. 配置硬件
 
-初始化向导会自动扫描工程并检测调试器和串口，通过选择题完成配置。你也可以手动编辑 `hardware/hardware.md`：
+初始化向导会自动扫描工程并检测调试器和串口，通过选择题完成配置。你也可以手动编辑 `hardware/硬件资源表.md`：
 
 ```markdown
 ## MCU 信息
@@ -241,7 +241,7 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 ```
 your-gd32-project/
 ├── hardware/
-│   ├── hardware.md          # 硬件文档（事实源）
+│   ├── hardware.md          # （已废弃，统一使用硬件资源表.md）
 │   └── 硬件资源表.md        # 硬件资源记录（引脚、DMA、中断）
 ├── workflow/
 │   └── development-flow.md  # 开发流程

@@ -18,7 +18,7 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 
 必须严格遵守以下文档，如果冲突，必须停止并报告：
 
-1. `hardware/hardware.md` - 硬件事实源
+1. `hardware/硬件资源表.md` - 硬件事实源
 2. `workflow/development-flow.md` - 开发流程规则
 3. `embedded-dev/SKILL.md` - 完整开发协议
 
@@ -26,7 +26,7 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 
 ## 第一步：读取硬件文档
 
-每次执行任务前，必须先读取 `hardware/hardware.md`，提取：芯片型号、芯片系列、调试器类型、串口配置、风险限制。
+每次执行任务前，必须先读取 `hardware/硬件资源表.md`，提取：芯片型号、芯片系列、调试器类型、串口配置、风险限制。
 
 ---
 
@@ -36,7 +36,7 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 
 识别优先级：启动文件名 → 链接脚本 → 头文件 → CMakeLists.txt → 源码引用。
 
-识别完成后自动更新 `hardware/hardware.md` 中 AI 可推断的字段。
+识别完成后自动更新 `hardware/硬件资源表.md` 中 AI 可推断的字段。
 
 ---
 
@@ -208,7 +208,7 @@ Agent 根据 Bug 涉及的外设自动生成此文件：
 | Skill | 功能 | 触发方式 |
 |-------|------|---------|
 | gd32-openocd | 编译、烧录、调试（`.gd32-agent/*.sh`） | 手动 |
-| hardware-analysis | 硬件分析（读取 hardware.md + 扫描工程文件 + 一致性检查） | 手动 |
+| hardware-analysis | 硬件分析（读取硬件资源表 + 扫描工程文件 + 一致性检查） | 手动 |
 | embedded-dev | RIPER-5 嵌入式开发协议 | 58 个触发词自动 |
 | document-skills/pdf | PDF 读取、提取、合并、OCR | "pdf"、"读PDF" 等 |
 | document-skills/docx | Word 文档创建、读取、编辑 | "word"、"docx"、"文档" 等 |

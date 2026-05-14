@@ -55,7 +55,7 @@ Initialize this GD32 project
 
 ### 4. Configure Hardware
 
-Edit `hardware/hardware.md`, fill in your hardware information:
+Edit `hardware/硬件资源表.md`, fill in your hardware information:
 
 ```markdown
 ## MCU Information
@@ -158,7 +158,7 @@ Detailed multi-agent workflow: `docs/multi-agent-workflow.md`
 ```
 your-gd32-project/
 ├── hardware/
-│   ├── hardware.md          # Hardware Document
+│   ├── hardware.md          # (Deprecated, use 硬件资源表.md)
 │   └── 硬件资源表.md        # Hardware Resource Table (pins, DMA, interrupts)
 ├── workflow/
 │   └── development-flow.md  # Development Flow

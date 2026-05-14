@@ -1,7 +1,7 @@
 #!/bin/bash
-# 对比 hardware/hardware.md 与工程文件的一致性
+# 对比 hardware/硬件资源表.md 与工程文件的一致性
 
-HARDWARE_MD="hardware/hardware.md"
+HARDWARE_MD="hardware/硬件资源表.md"
 
 if [ ! -f "$HARDWARE_MD" ]; then
     echo "错误: 未找到 $HARDWARE_MD"
@@ -14,11 +14,11 @@ echo "=========================================="
 
 ISSUES=0
 
-# 从 hardware.md 提取芯片型号
+# 从硬件资源表提取芯片型号
 HW_CHIP=$(grep -i "芯片型号\|chip.*model\|MCU" "$HARDWARE_MD" | head -1 | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
 HW_SERIES=$(grep -i "芯片系列\|chip.*series" "$HARDWARE_MD" | head -1 | sed 's/.*[：:]\s*//' | tr -d '[:space:]')
 
-echo "hardware.md 声明:"
+echo "硬件资源表 声明:"
 echo "  芯片型号: $HW_CHIP"
 echo "  芯片系列: $HW_SERIES"
 echo ""
@@ -30,7 +30,7 @@ if [ -n "$STARTUP" ]; then
     STARTUP_CHIP=$(basename "$STARTUP" | sed 's/startup_//' | sed 's/\..*//')
     echo "启动文件: $STARTUP → $STARTUP_CHIP"
     if [ -n "$HW_CHIP" ] && ! echo "$STARTUP_CHIP" | grep -qi "$(echo "$HW_CHIP" | tr '[:upper:]' '[:lower:]' | sed 's/[0-9]*$//')"; then
-        echo "  ⚠️ 可能不匹配: hardware.md=$HW_CHIP vs startup=$STARTUP_CHIP"
+        echo "  ⚠️ 可能不匹配: 硬件资源表=$HW_CHIP vs startup=$STARTUP_CHIP"
         ISSUES=$((ISSUES + 1))
     else
         echo "  ✅ 一致"

@@ -18,12 +18,12 @@ allowed-tools: Read, Glob, Grep, Write
 ## 前置条件
 
 1. 已创建 `docs/analysis/` 目录
-2. 已读取 `hardware/hardware.md`
+2. 已读取 `hardware/硬件资源表.md`
 
 ## 读取硬件文档
 
 ```bash
-cat hardware/hardware.md
+cat hardware/硬件资源表.md
 ```
 
 提取关键信息：

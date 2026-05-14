@@ -40,7 +40,7 @@ your-gd32-project/
 ├── Makefile                # Make 工程（可选）
 ├── MDK-ARM/                # Keil 工程（可选）
 ├── hardware/               # 硬件文档（Agent 提供）
-│   └── hardware.md
+│   └── 硬件资源表.md
 ├── workflow/               # 开发流程（Agent 提供）
 │   └── development-flow.md
 ├── docs/                   # 文档目录（Agent 提供）
@@ -57,7 +57,7 @@ your-gd32-project/
 
 ### 第三步：配置硬件文档
 
-编辑 `hardware/hardware.md`，填写你的硬件信息：
+编辑 `hardware/硬件资源表.md`，填写你的硬件信息：
 
 ```markdown
 # 硬件文档
@@ -150,7 +150,7 @@ claude
 ```
 
 Claude 会自动：
-1. 读取 `hardware/hardware.md`
+1. 读取 `hardware/硬件资源表.md`
 2. 扫描工程文件
 3. 识别芯片型号
 4. 生成分析文档
@@ -245,7 +245,7 @@ Error: couldn't open firmware.hex
 4. 时钟配置错误
 
 **解决方案**：
-1. 检查 `hardware/hardware.md` 中的串口配置
+1. 检查 `hardware/硬件资源表.md` 中的串口配置
 2. 检查代码中的串口初始化
 3. 使用示波器检查 TX 引脚
 
@@ -335,7 +335,7 @@ chmod +x batch_flash.sh
 
 | 文件 | 说明 |
 |------|------|
-| `hardware/hardware.md` | 硬件文档，包含芯片、调试器、串口配置 |
+| `hardware/硬件资源表.md` | 硬件文档，包含芯片、调试器、串口配置 |
 | `workflow/development-flow.md` | 开发流程文档，定义标准流程和禁止行为 |
 | `CLAUDE.md` | Claude Code 规则文件，定义 Agent 行为 |
 | `.gd32-agent/openocd.cfg` | OpenOCD 配置文件 |
