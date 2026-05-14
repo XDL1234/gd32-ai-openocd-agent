@@ -180,7 +180,8 @@ your-gd32-project/
 │   ├── build.sh             # 编译脚本
 │   ├── flash.sh             # 烧录脚本
 │   ├── serial.sh            # 串口脚本
-│   ├── debug.sh             # 调试脚本
+│   ├── debug.sh             # 寄存器调试（支持通用/外设/批量模式）
+│   ├── debug-loop.sh        # 自动调试循环（编译→烧录→寄存器→串口）
 │   ├── gen-openocd-cfg.sh   # 自动生成 OpenOCD 配置
 │   ├── verify-hardware.sh   # 硬件一致性检查
 │   ├── detect-serial.sh     # 串口自动检测
@@ -234,8 +235,30 @@ bash .gd32-agent/serial.sh COM15 115200 10
 ### 寄存器调试
 
 ```bash
+# 通用寄存器转储
 bash .gd32-agent/debug.sh build/app.elf
+
+# 读取指定外设寄存器（如 USART0 基地址，读 16 个寄存器）
+bash .gd32-agent/debug.sh --periph 0x40011000 16 build/app.elf
+
+# 批量读取多个外设寄存器
+bash .gd32-agent/debug.sh --batch .gd32-agent/periph-addrs.txt build/app.elf
 ```
+
+### 自动调试循环
+
+```bash
+# 一键执行：编译 → 烧录 → 寄存器读取 → 串口观察
+bash .gd32-agent/debug-loop.sh
+
+# 指定串口超时（默认 5 秒）
+bash .gd32-agent/debug-loop.sh 10
+
+# 指定外设地址文件
+bash .gd32-agent/debug-loop.sh 5 .gd32-agent/periph-addrs.txt
+```
+
+证据文件保存在 `.gd32-agent/logs/debug-<时间戳>/` 目录下。
 
 ### 日志记录
 

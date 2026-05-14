@@ -81,7 +81,10 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 bash .gd32-agent/build.sh                    # 编译
 bash .gd32-agent/flash.sh build/app.hex      # 烧录
 bash .gd32-agent/serial.sh COM15 115200 10   # 串口观察
-bash .gd32-agent/debug.sh build/app.elf      # 寄存器调试
+bash .gd32-agent/debug.sh build/app.elf      # 寄存器调试（通用寄存器）
+bash .gd32-agent/debug.sh --periph 0x40011000 16 build/app.elf  # 读外设寄存器
+bash .gd32-agent/debug.sh --batch .gd32-agent/periph-addrs.txt build/app.elf  # 批量读外设
+bash .gd32-agent/debug-loop.sh 5             # 自动调试循环（编译→烧录→寄存器→串口）
 bash .gd32-agent/log-with-timestamp.sh <type> <status> "<message>"  # 日志
 ```
 
@@ -97,6 +100,7 @@ bash .gd32-agent/log-with-timestamp.sh <type> <status> "<message>"  # 日志
 | 烧录 / flash | build.sh → flash.sh | 编译成功 |
 | 串口 / serial | `bash .gd32-agent/serial.sh` | 无 |
 | 调试 / debug | `bash .gd32-agent/debug.sh` | 有 .elf 文件 |
+| 调试循环 / debug-loop | `bash .gd32-agent/debug-loop.sh` | 无 |
 | 全流程 / run | build → flash → serial | 无 |
 | 环境检查 / check-env | `bash .gd32-agent/check-env.sh` | 无 |
 | 扫描 / scan | `bash .gd32-agent/scan-project.sh` | 无 |
@@ -123,6 +127,79 @@ bash .gd32-agent/log-with-timestamp.sh <type> <status> "<message>"  # 日志
 ### 烧录前必须确认
 
 1. 芯片型号 2. 调试器类型 3. 固件文件 4. OpenOCD 配置
+
+---
+
+## 自动调试循环（Bug 定位模式）
+
+当用户报告 Bug 或 Agent 在开发过程中发现功能异常时，进入自动调试循环。
+
+### 核心铁律
+
+1. **禁止凭空捏造**：所有关于寄存器值、外设状态、运行结果的判断，必须来自 OpenOCD/GDB 实际读取或串口实际输出，禁止使用"应该是"、"理论上"、"根据经验"等猜测性表述
+2. **证据驱动**：每一轮修复必须附带完整证据链（编译日志 + 烧录日志 + 寄存器转储 + 串口输出）
+3. **自动执行**：编译、烧录、寄存器读取、串口观察全程自动执行，无需用户逐步确认权限
+4. **循环直到解决**：修改代码后自动重新执行调试循环，直到 Bug 被证据确认已修复
+
+### 自动调试流程
+
+```
+发现Bug → 分析代码 → 确定需要监测的外设寄存器
+    → 生成 periph-addrs.txt（外设基地址列表）
+    → 修改代码
+    → 自动执行 debug-loop.sh（编译→烧录→寄存器读取→串口观察）
+    → 读取证据文件，分析根因
+    → Bug 未修复？→ 继续修改代码 → 重新执行循环
+    → Bug 已修复？→ 输出完整证据报告
+```
+
+### 执行命令
+
+```bash
+# 一键调试循环（自动编译→烧录→寄存器→串口）
+bash .gd32-agent/debug-loop.sh [串口超时秒数] [外设地址文件]
+
+# 读取指定外设寄存器（手动单步）
+bash .gd32-agent/debug.sh --periph <基地址> [寄存器数量] <固件.elf>
+
+# 批量读取多个外设寄存器
+bash .gd32-agent/debug.sh --batch .gd32-agent/periph-addrs.txt <固件.elf>
+```
+
+### 外设地址文件格式（`.gd32-agent/periph-addrs.txt`）
+
+Agent 根据 Bug 涉及的外设自动生成此文件：
+```
+# 基地址 外设名称
+0x40021000 RCU
+0x40020C00 GPIOA
+0x40011000 USART0
+```
+
+### 证据报告要求
+
+每轮调试循环结束后，必须输出：
+
+| 证据项 | 来源 | 必须 |
+|--------|------|------|
+| 编译结果 | `build.log`（退出码 + 错误/警告摘要） | 是 |
+| 烧录结果 | `flash.log`（退出码 + verify 状态） | 是 |
+| 寄存器值 | `registers-general.md` + `registers-periph.md` | 是（有 .elf 时） |
+| 串口输出 | `serial.log`（实际捕获内容） | 是 |
+| 根因分析 | 基于以上证据的分析，引用具体寄存器值和日志行 | 是 |
+| 修复措施 | 代码 diff + 为什么这个修改能解决问题 | 是（非首轮） |
+
+### 权限规则
+
+- 调试循环中的编译、烧录、寄存器读取、串口观察**自动执行，无需用户逐步确认**
+- 安全红线仍然生效（禁止全片擦除、禁止修改 Option Bytes 等）
+- 代码修改仍需遵循正常的编辑流程（但不需要等待用户确认即可继续调试循环）
+
+### 停止条件
+
+- Bug 已修复（有证据证明）
+- 连续 5 轮循环无法定位根因 → 停止并输出所有已收集的证据，请求用户介入
+- 遇到硬件故障（调试器无法连接、芯片无响应）→ 立即停止并报告
 
 ---
 
