@@ -45,7 +45,7 @@ build_cmake() {
     if ! cmake .. 2>&1 | tee -a "../$BUILD_LOG"; then
         echo ""
         echo "❌ cmake 配置失败"
-        bash .gd32-agent/log-with-timestamp.sh build FAIL "cmake 配置失败"
+        bash ../.gd32-agent/log-with-timestamp.sh build FAIL "cmake 配置失败"
         exit 1
     fi
 

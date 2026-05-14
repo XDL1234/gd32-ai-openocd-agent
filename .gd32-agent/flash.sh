@@ -8,15 +8,24 @@ if [ -f "$SCRIPT_DIR/config.env" ]; then
     source "$SCRIPT_DIR/config.env"
 fi
 
-# OpenOCD 路径：config.env → which → 硬编码 fallback
+# OpenOCD 路径：config.env → which → 常见安装路径 fallback
 resolve_openocd() {
     if [ -n "$OPENOCD_PATH" ] && [ -f "$OPENOCD_PATH" ]; then
         echo "$OPENOCD_PATH"
     elif command -v openocd &> /dev/null; then
         which openocd
-    elif [ -f "D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe" ]; then
-        echo "D:\openocd\xpack-openocd-0.12.0-6\bin\openocd.exe"
     else
+        # Windows 常见安装路径
+        for candidate in \
+            "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
+            "C:/Program Files/openocd/bin/openocd.exe" \
+            "C:/Program Files (x86)/openocd/bin/openocd.exe" \
+            "C:/openocd/bin/openocd.exe"; do
+            if [ -f "$candidate" ]; then
+                echo "$candidate"
+                return
+            fi
+        done
         echo ""
     fi
 }

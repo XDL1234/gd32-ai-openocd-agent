@@ -7,7 +7,7 @@
 
 > 基于 Claude Code 的 GD32 嵌入式自动化开发 Agent
 
-[English](./README_EN.md) | [中文](./README.md)
+<!-- [English](./README_EN.md) | -->[中文](./README.md)
 
 ## 简介
 
@@ -55,7 +55,7 @@ gd32-agent init
 
 ### 4. 配置硬件
 
-编辑 `hardware/hardware.md`，填写你的硬件信息：
+初始化向导会自动扫描工程并检测调试器和串口，通过选择题完成配置。你也可以手动编辑 `hardware/hardware.md`：
 
 ```markdown
 ## MCU 信息
@@ -73,7 +73,7 @@ gd32-agent init
 - 波特率：115200
 ```
 
-### 4. 开始开发
+### 5. 开始开发
 
 ```
 帮我实现 USART0 打印启动日志，并烧录验证
@@ -98,12 +98,7 @@ gd32-agent init
 | **研究发现** | `docs/研究发现.md` | 记录搜索结果和技术方案 |
 | **项目规划清单** | `docs/项目规划清单.md` | 记录项目整体进度和轮次 |
 
-**会话恢复规则**：每次会话开始时，必须回答五问重启测试：
-1. 当前处于哪个阶段？
-2. 最后一次代码修改是什么？
-3. 芯片型号和引脚分配确认吗？
-4. 之前的搜索发现了什么？
-5. 我现在应该从哪里继续？
+**会话恢复规则**：每次会话开始时，Agent 静默读取四文件并展示简短摘要，然后询问"继续上次的工作还是开始新任务？"
 
 ### 证据优先原则
 
@@ -140,15 +135,17 @@ gd32-agent init
 用户需求 → [Scout] 收集证据 → [Builder] 实现验证 → [Verifier] 审查验收
 ```
 
-详细的多 Agent 工作流程见 `docs/multi-agent-workflow.md`。
+详细的多 Agent 分工规则见 `embedded-dev/refs/vibe-workflow.md`。
 
 ### Skills 体系
 
-| Skill | 来源 | 功能 |
-|-------|------|------|
-| embedded-dev | 自定义 | RIPER-5 嵌入式开发协议（证据优先、轮次制、多Agent） |
-| gd32-openocd | 自定义 | 编译、烧录、调试 |
-| hardware-analysis | 自定义 | 硬件分析 |
+| Skill | 来源 | 功能 | 触发方式 |
+|-------|------|------|---------|
+| embedded-dev | 自定义 | RIPER-5 嵌入式开发协议 | 58 个触发词自动 |
+| gd32-openocd | 自定义 | 编译、烧录、调试 | 手动 |
+| hardware-analysis | 自定义 | 硬件分析 | 手动 |
+| document-skills | Anthropic 官方 | PDF/Word/PPT/Excel 读取与处理 | "pdf"、"word"、"ppt"、"excel" 等 |
+| superpowers | obra/superpowers | 系统化调试、头脑风暴、计划编写、并行 Agent | "调试"、"头脑风暴"、"写计划" 等 |
 
 ### 指令层级
 
@@ -186,6 +183,7 @@ your-gd32-project/
 │   ├── debug.sh             # 调试脚本
 │   ├── gen-openocd-cfg.sh   # 自动生成 OpenOCD 配置
 │   ├── verify-hardware.sh   # 硬件一致性检查
+│   ├── detect-serial.sh     # 串口自动检测
 │   └── log-with-timestamp.sh # 日志脚本
 ├── templates/
 │   ├── project/gd32f470vet6/ # GD32F470VET6 工程模板
@@ -248,10 +246,9 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 
 ## 文档
 
-- [用户指南](./docs/user-guide.md) - 详细的使用说明
-- [多 Agent 工作流程](./docs/multi-agent-workflow.md) - Scout/Builder/Verifier 分工协作
 - [RIPER-5 开发协议](./embedded-dev/SKILL.md) - 完整嵌入式开发协议
 - [GD32F4xx API 速查](./embedded-dev/refs/gd32f4xx-stdperiph-api.md) - GD32 标准库 API 参考
+- [多 Agent 分工](./embedded-dev/refs/vibe-workflow.md) - Scout/Builder/Verifier 分工协作
 
 ## 支持的硬件
 
@@ -278,7 +275,7 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 
 ## 贡献
 
-欢迎贡献！请查看 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+欢迎贡献！请提交 Issue 或 Pull Request。
 
 ## 许可证
 

@@ -171,6 +171,56 @@ echo "=========================================="
 echo ""
 echo "扫描报告已生成: $REPORT_FILE"
 echo ""
+
+# 自动回填 config.env
+CONFIG_FILE=".gd32-agent/config.env"
+if [ -f "$CONFIG_FILE" ]; then
+    UPDATED=false
+
+    # 自动检测 OpenOCD 路径
+    CURRENT_OPENOCD=$(grep "^OPENOCD_PATH=" "$CONFIG_FILE" | cut -d'"' -f2)
+    if [ -z "$CURRENT_OPENOCD" ]; then
+        DETECTED_OPENOCD=$(which openocd 2>/dev/null)
+        if [ -z "$DETECTED_OPENOCD" ]; then
+            # 常见 Windows 安装路径
+            for candidate in \
+                "/c/Program Files/openocd/bin/openocd.exe" \
+                "/c/Program Files (x86)/openocd/bin/openocd.exe" \
+                "/d/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
+                "$HOME/.local/xPacks/@xpack-dev-tools/openocd/*/content/bin/openocd.exe" \
+                "/c/xpack-openocd/bin/openocd.exe"; do
+                if [ -f "$candidate" ]; then
+                    DETECTED_OPENOCD="$candidate"
+                    break
+                fi
+            done
+        fi
+        if [ -n "$DETECTED_OPENOCD" ]; then
+            sed -i "s|^OPENOCD_PATH=.*|OPENOCD_PATH=\"$DETECTED_OPENOCD\"|" "$CONFIG_FILE"
+            echo "✅ 已自动设置 OPENOCD_PATH=$DETECTED_OPENOCD"
+            UPDATED=true
+        fi
+    fi
+
+    # 自动检测串口
+    CURRENT_PORT=$(grep "^SERIAL_PORT=" "$CONFIG_FILE" | cut -d'"' -f2)
+    if [ "$CURRENT_PORT" = "COM3" ] || [ -z "$CURRENT_PORT" ]; then
+        SERIAL_OUTPUT=$(bash .gd32-agent/detect-serial.sh 2>/dev/null)
+        DETECTED_PORT=$(echo "$SERIAL_OUTPUT" | grep "^DETECTED_PORT=" | cut -d'=' -f2)
+        if [ -n "$DETECTED_PORT" ]; then
+            sed -i "s|^SERIAL_PORT=.*|SERIAL_PORT=\"$DETECTED_PORT\"|" "$CONFIG_FILE"
+            echo "✅ 已自动设置 SERIAL_PORT=$DETECTED_PORT"
+            UPDATED=true
+        fi
+    fi
+
+    if [ "$UPDATED" = true ]; then
+        echo ""
+        echo "config.env 已自动更新，请确认配置是否正确。"
+    fi
+fi
+
+echo ""
 echo "请确认扫描结果："
 echo "1. 分析正确"
 echo "2. 分析有误，再次分析"

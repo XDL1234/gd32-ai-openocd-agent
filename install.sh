@@ -1,9 +1,12 @@
 #!/bin/bash
 # GD32 AI Agent 安装脚本
 # 将 gd32-agent 配置文件复制到当前工程目录
+# 支持首次安装和增量更新
+
+VERSION="1.1.0"
 
 echo "=========================================="
-echo "GD32 AI Agent 安装"
+echo "GD32 AI Agent 安装 v$VERSION"
 echo "=========================================="
 echo ""
 
@@ -13,8 +16,44 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # 获取当前工作目录（用户工程目录）
 CURRENT_DIR="$(pwd)"
 
+# 解析命令行参数
+MODE="install"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --update)
+            MODE="update"
+            shift
+            ;;
+        --check)
+            MODE="check"
+            shift
+            ;;
+        --force)
+            MODE="force"
+            shift
+            ;;
+        --help|-h)
+            echo "用法: bash install.sh [选项]"
+            echo ""
+            echo "选项:"
+            echo "  (无参数)   首次安装（已安装则询问覆盖）"
+            echo "  --update   增量更新（只更新脚本和协议，保留用户配置）"
+            echo "  --check    检查是否有新版本"
+            echo "  --force    强制覆盖所有文件（包括用户配置）"
+            echo "  --help     显示帮助"
+            exit 0
+            ;;
+        *)
+            echo "未知选项: $1"
+            echo "使用 --help 查看帮助"
+            exit 1
+            ;;
+    esac
+done
+
 echo "gd32-agent 仓库: $SCRIPT_DIR"
 echo "目标工程目录: $CURRENT_DIR"
+echo "安装模式: $MODE"
 echo ""
 
 # 检测操作系统
@@ -42,9 +81,36 @@ if [ "$SCRIPT_DIR" = "$CURRENT_DIR" ]; then
     exit 1
 fi
 
+# --check 模式：只检查版本
+if [ "$MODE" = "check" ]; then
+    INSTALLED_VERSION=""
+    if [ -f ".gd32-agent/.version" ]; then
+        INSTALLED_VERSION=$(cat .gd32-agent/.version)
+    fi
+    echo "仓库版本: $VERSION"
+    if [ -n "$INSTALLED_VERSION" ]; then
+        echo "已安装版本: $INSTALLED_VERSION"
+        if [ "$INSTALLED_VERSION" = "$VERSION" ]; then
+            echo "✅ 已是最新版本"
+        else
+            echo "⬆️  有新版本可用，运行 'bash $0 --update' 更新"
+        fi
+    else
+        echo "未安装或版本未记录"
+        echo "运行 'bash $0' 进行安装"
+    fi
+    exit 0
+fi
+
 # 检查是否已经安装
+ALREADY_INSTALLED=false
 if [ -d ".gd32-agent" ] || [ -d ".claude/skills/gd32-openocd" ]; then
+    ALREADY_INSTALLED=true
+fi
+
+if [ "$ALREADY_INSTALLED" = true ] && [ "$MODE" = "install" ]; then
     echo "检测到已存在 GD32 AI Agent 配置"
+    echo "提示: 使用 --update 仅更新脚本和协议（保留你的配置）"
     read -p "是否覆盖？(y/N): " -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -53,11 +119,54 @@ if [ -d ".gd32-agent" ] || [ -d ".claude/skills/gd32-openocd" ]; then
     fi
 fi
 
+# 用户配置文件列表（--update 模式不覆盖这些文件）
+USER_CONFIG_FILES=(
+    ".gd32-agent/config.env"
+    ".gd32-agent/openocd.cfg"
+    "hardware/hardware.md"
+    "hardware/硬件资源表.md"
+    "docs/编辑清单.md"
+    "docs/研究发现.md"
+    "docs/项目规划清单.md"
+    "workflow/development-flow.md"
+    "CLAUDE.md"
+)
+
+# 判断文件是否为用户配置（--update 时跳过）
+is_user_config() {
+    local file="$1"
+    if [ "$MODE" = "force" ]; then
+        return 1  # force 模式不跳过任何文件
+    fi
+    if [ "$MODE" = "update" ]; then
+        for cfg in "${USER_CONFIG_FILES[@]}"; do
+            if [ "$file" = "$cfg" ]; then
+                return 0  # 是用户配置，跳过
+            fi
+        done
+    fi
+    return 1  # 不是用户配置，正常覆盖
+}
+
+# 安全复制：update 模式下不覆盖用户配置
+safe_copy() {
+    local src="$1"
+    local dest="$2"
+    if [ ! -f "$src" ]; then
+        return
+    fi
+    if is_user_config "$dest" && [ -f "$dest" ]; then
+        echo "  [跳过] $dest（用户配置，已存在）"
+        return
+    fi
+    cp "$src" "$dest"
+}
+
 echo "开始安装..."
 echo ""
 
 # 创建目录结构
-echo "[1/8] 创建目录结构..."
+echo "[1/9] 创建目录结构..."
 mkdir -p .gd32-agent/logs
 mkdir -p hardware
 mkdir -p workflow
@@ -66,47 +175,46 @@ mkdir -p .claude/commands/gd32-agent
 mkdir -p .claude/skills
 
 # 复制 .gd32-agent 脚本
-echo "[2/8] 复制 gd32-agent 脚本..."
+echo "[2/9] 复制 gd32-agent 脚本..."
 for f in check-env.sh scan-project.sh build.sh flash.sh serial.sh debug.sh \
-         log-with-timestamp.sh gen-openocd-cfg.sh verify-hardware.sh openocd.cfg config.env; do
+         log-with-timestamp.sh gen-openocd-cfg.sh verify-hardware.sh detect-serial.sh; do
     if [ -f "$SCRIPT_DIR/.gd32-agent/$f" ]; then
         cp "$SCRIPT_DIR/.gd32-agent/$f" .gd32-agent/
     fi
 done
 
-# 如果用户已有 config.env 且非首次安装，不覆盖
-if [ -f ".gd32-agent/config.env.bak" ]; then
-    mv .gd32-agent/config.env.bak .gd32-agent/config.env
-fi
+# config.env 和 openocd.cfg 走安全复制
+safe_copy "$SCRIPT_DIR/.gd32-agent/config.env" ".gd32-agent/config.env"
+safe_copy "$SCRIPT_DIR/.gd32-agent/openocd.cfg" ".gd32-agent/openocd.cfg"
 
 # 设置执行权限
 chmod +x .gd32-agent/*.sh 2>/dev/null
 
 # 复制 Claude 命令
-echo "[3/8] 复制 Claude 命令..."
-cp "$SCRIPT_DIR/.claude/commands/gd32-agent/init.md" .claude/commands/gd32-agent/
+echo "[3/9] 复制 Claude 命令..."
+for cmd in "$SCRIPT_DIR"/.claude/commands/gd32-agent/*.md; do
+    [ -f "$cmd" ] && cp "$cmd" .claude/commands/gd32-agent/
+done
 
-# 复制 Skills（仅 gd32-openocd 和 hardware-analysis）
-echo "[4/8] 复制 Skills..."
+# 复制 Skills（gd32-openocd、hardware-analysis、document-skills、superpowers-skills）
+echo "[4/9] 复制 Skills..."
 cp -r "$SCRIPT_DIR/.claude/skills/gd32-openocd" .claude/skills/ 2>/dev/null || true
 cp -r "$SCRIPT_DIR/.claude/skills/hardware-analysis" .claude/skills/ 2>/dev/null || true
+cp -r "$SCRIPT_DIR/.claude/skills/document-skills" .claude/skills/ 2>/dev/null || true
+cp -r "$SCRIPT_DIR/.claude/skills/superpowers-skills" .claude/skills/ 2>/dev/null || true
 
 # 复制 embedded-dev skill
+echo "[5/9] 复制 embedded-dev skill..."
 if [ -d "$SCRIPT_DIR/embedded-dev" ]; then
-    echo "[4/8] 复制 embedded-dev skill..."
     cp -r "$SCRIPT_DIR/embedded-dev" . 2>/dev/null || true
 fi
 
-# 复制 CLAUDE.md（如果不存在）
-echo "[5/8] 复制 CLAUDE.md..."
-if [ ! -f "CLAUDE.md" ]; then
-    cp "$SCRIPT_DIR/CLAUDE.md" .
-else
-    echo "  CLAUDE.md 已存在，跳过"
-fi
+# 复制 CLAUDE.md
+echo "[6/9] 复制 CLAUDE.md..."
+safe_copy "$SCRIPT_DIR/CLAUDE.md" "CLAUDE.md"
 
-# 复制四文件模板（工作记忆机制）
-echo "[6/8] 复制四文件模板..."
+# 复制四文件模板（仅在文件不存在时）
+echo "[7/9] 复制四文件模板..."
 for tpl in "hardware/硬件资源表.md:templates/硬件资源表.md" \
            "docs/编辑清单.md:templates/编辑清单.md" \
            "docs/研究发现.md:templates/研究发现.md" \
@@ -118,44 +226,51 @@ for tpl in "hardware/硬件资源表.md:templates/硬件资源表.md" \
     fi
 done
 
-# 复制多 Agent 工作流程文档
-if [ ! -f "docs/multi-agent-workflow.md" ] && [ -f "$SCRIPT_DIR/docs/multi-agent-workflow.md" ]; then
-    cp "$SCRIPT_DIR/docs/multi-agent-workflow.md" docs/
-fi
-
-# 生成 config.env（自动检测工具路径）
-echo "[7/8] 检测工具路径..."
+# 自动检测工具路径
+echo "[8/9] 检测工具路径..."
 CONFIG_ENV=".gd32-agent/config.env"
 
-# 自动检测 OpenOCD 路径
-DETECTED_OPENOCD=""
-if command -v openocd &> /dev/null; then
-    DETECTED_OPENOCD=$(which openocd)
-elif [ "$OS_TYPE" = "Windows" ]; then
-    for p in "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
-             "C:/openocd/bin/openocd.exe" \
-             "$LOCALAPPDATA/xPacks/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe"; do
-        if [ -f "$p" ]; then
-            DETECTED_OPENOCD="$p"
-            break
-        fi
-    done
+# 仅在 OPENOCD_PATH 为空时自动检测
+CURRENT_OPENOCD=$(grep "^OPENOCD_PATH=" "$CONFIG_ENV" 2>/dev/null | cut -d'"' -f2)
+if [ -z "$CURRENT_OPENOCD" ]; then
+    DETECTED_OPENOCD=""
+    if command -v openocd &> /dev/null; then
+        DETECTED_OPENOCD=$(which openocd)
+    elif [ "$OS_TYPE" = "Windows" ]; then
+        for p in "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
+                 "C:/openocd/bin/openocd.exe" \
+                 "C:/Program Files/openocd/bin/openocd.exe" \
+                 "C:/Program Files (x86)/openocd/bin/openocd.exe" \
+                 "$LOCALAPPDATA/xPacks/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe"; do
+            if [ -f "$p" ]; then
+                DETECTED_OPENOCD="$p"
+                break
+            fi
+        done
+    fi
+
+    if [ -n "$DETECTED_OPENOCD" ]; then
+        echo "  检测到 OpenOCD: $DETECTED_OPENOCD"
+        sed -i "s|^OPENOCD_PATH=.*|OPENOCD_PATH=\"$DETECTED_OPENOCD\"|" "$CONFIG_ENV" 2>/dev/null || true
+    fi
 fi
 
-if [ -n "$DETECTED_OPENOCD" ]; then
-    echo "  检测到 OpenOCD: $DETECTED_OPENOCD"
-    sed -i "s|^OPENOCD_PATH=.*|OPENOCD_PATH=\"$DETECTED_OPENOCD\"|" "$CONFIG_ENV" 2>/dev/null || true
-fi
+# 写入版本号
+echo "$VERSION" > .gd32-agent/.version
 
 # 运行环境检查
-echo "[8/8] 运行环境检查..."
+echo "[9/9] 运行环境检查..."
 if [ -f ".gd32-agent/check-env.sh" ]; then
     bash .gd32-agent/check-env.sh
 fi
 
 echo ""
 echo "=========================================="
-echo "安装完成"
+if [ "$MODE" = "update" ]; then
+    echo "更新完成 (v$VERSION)"
+else
+    echo "安装完成 (v$VERSION)"
+fi
 echo "=========================================="
 echo ""
 echo "已创建的目录："
@@ -166,19 +281,15 @@ echo "  - .gd32-agent/       (Agent 脚本)"
 echo "  - .claude/           (Claude 配置)"
 echo "  - embedded-dev/      (开发协议 Skill)"
 echo ""
-echo "已创建的文件："
-echo "  - CLAUDE.md                    (Agent 规则)"
-echo "  - .gd32-agent/*.sh             (工具脚本)"
-echo "  - .gd32-agent/config.env       (配置文件)"
-echo "  - hardware/硬件资源表.md       (硬件资源记录)"
-echo "  - docs/编辑清单.md             (代码修改记录)"
-echo "  - docs/研究发现.md             (搜索结果记录)"
-echo "  - docs/项目规划清单.md         (项目进度记录)"
-echo "  - docs/multi-agent-workflow.md (多 Agent 工作流程)"
-echo ""
-echo "下一步："
-echo "  1. 编辑 .gd32-agent/config.env 确认工具路径"
-echo "  2. 编辑 hardware/hardware.md 填写硬件信息"
-echo "  3. 在 Claude Code 中输入: gd32-agent init"
+if [ "$MODE" = "update" ]; then
+    echo "已更新: 脚本、命令、Skills、协议"
+    echo "已保留: config.env、openocd.cfg、hardware.md 等用户配置"
+else
+    echo "下一步："
+    echo "  1. 在 Claude Code 中输入: gd32-agent init"
+    echo "     (初始化向导会自动配置调试器和串口)"
+    echo "  2. 或手动编辑 .gd32-agent/config.env 和 hardware/hardware.md"
+    echo "  3. 开始开发！"
+fi
 echo ""
 echo "=========================================="
