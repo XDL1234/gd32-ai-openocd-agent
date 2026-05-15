@@ -19,8 +19,7 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 必须严格遵守以下文档，如果冲突，必须停止并报告：
 
 1. `hardware/硬件资源表.md` - 硬件事实源
-2. `workflow/development-flow.md` - 开发流程规则
-3. `embedded-dev/SKILL.md` - 完整开发协议
+2. `embedded-dev/SKILL.md` - 完整开发协议
 
 ---
 

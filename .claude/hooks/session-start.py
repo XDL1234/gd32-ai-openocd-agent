@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Session Start Hook - Inject structured context
+Session Start Hook - GD32 嵌入式工程上下文注入
+
+注入内容：
+- <current-state>: git 分支/状态/近期 commit + 硬件资源表/config.env 状态
+- <ready>: 简短的会话启动提示
+
+设计原则：
+- 不依赖任何外部框架（如 Trellis）
+- 注入内容轻量，避免上下文窗口浪费
+- 失败时降级为最小注入而不是崩溃
 """
 
-# IMPORTANT: Suppress all warnings FIRST
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -15,8 +23,7 @@ import sys
 from io import StringIO
 from pathlib import Path
 
-# IMPORTANT: Force stdout to use UTF-8 on Windows
-# This fixes UnicodeEncodeError when outputting non-ASCII characters
+# 强制 Windows stdout 使用 UTF-8
 if sys.platform == "win32":
     import io as _io
     if hasattr(sys.stdout, "reconfigure"):
@@ -32,286 +39,82 @@ def should_skip_injection() -> bool:
     )
 
 
-def read_file(path: Path, fallback: str = "") -> str:
+def _git(cmd: list, cwd: Path) -> str:
     try:
-        return path.read_text(encoding="utf-8")
-    except (FileNotFoundError, PermissionError):
-        return fallback
-
-
-def run_script(script_path: Path) -> str:
-    try:
-        if script_path.suffix == ".py":
-            # Add PYTHONIOENCODING to force UTF-8 in subprocess
-            env = os.environ.copy()
-            env["PYTHONIOENCODING"] = "utf-8"
-            cmd = [sys.executable, "-W", "ignore", str(script_path)]
-        else:
-            env = os.environ
-            cmd = [str(script_path)]
-
         result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=5,
-            cwd=script_path.parent.parent.parent,
-            env=env,
+            ["git"] + cmd,
+            capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+            timeout=3, cwd=str(cwd),
         )
-        return result.stdout if result.returncode == 0 else "No context available"
+        return result.stdout.strip() if result.returncode == 0 else ""
     except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
-        return "No context available"
-
-
-def _normalize_task_ref(task_ref: str) -> str:
-    normalized = task_ref.strip()
-    if not normalized:
         return ""
 
-    path_obj = Path(normalized)
-    if path_obj.is_absolute():
-        return str(path_obj)
 
-    normalized = normalized.replace("\\", "/")
-    while normalized.startswith("./"):
-        normalized = normalized[2:]
+def collect_git_status(project_dir: Path) -> list:
+    lines = []
+    branch = _git(["branch", "--show-current"], project_dir) or "(detached)"
+    status = _git(["status", "--porcelain"], project_dir)
+    if status:
+        change_count = len(status.splitlines())
+        working = f"{change_count} uncommitted change(s)"
+    else:
+        working = "Clean"
+    log = _git(["log", "--oneline", "-5"], project_dir)
 
-    if normalized.startswith("tasks/"):
-        return f".trellis/{normalized}"
-
-    return normalized
-
-
-def _resolve_task_dir(trellis_dir: Path, task_ref: str) -> Path:
-    normalized = _normalize_task_ref(task_ref)
-    path_obj = Path(normalized)
-    if path_obj.is_absolute():
-        return path_obj
-    if normalized.startswith(".trellis/"):
-        return trellis_dir.parent / path_obj
-    return trellis_dir / "tasks" / path_obj
+    lines.append("## GIT STATUS")
+    lines.append(f"Branch: {branch}")
+    lines.append(f"Working directory: {working}")
+    lines.append("")
+    lines.append("## RECENT COMMITS")
+    lines.append(log if log else "(no commits)")
+    return lines
 
 
-def _get_task_status(trellis_dir: Path) -> str:
-    """Check current task status and return structured status string."""
-    current_task_file = trellis_dir / ".current-task"
-    if not current_task_file.is_file():
-        return "Status: NO ACTIVE TASK\nNext: Describe what you want to work on"
-
-    task_ref = _normalize_task_ref(current_task_file.read_text(encoding="utf-8").strip())
-    if not task_ref:
-        return "Status: NO ACTIVE TASK\nNext: Describe what you want to work on"
-
-    # Resolve task directory
-    task_dir = _resolve_task_dir(trellis_dir, task_ref)
-    if not task_dir.is_dir():
-        return f"Status: STALE POINTER\nTask: {task_ref}\nNext: Task directory not found. Run: python3 ./.trellis/scripts/task.py finish"
-
-    # Read task.json
-    task_json_path = task_dir / "task.json"
-    task_data = {}
-    if task_json_path.is_file():
-        try:
-            task_data = json.loads(task_json_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, PermissionError):
-            pass
-
-    task_title = task_data.get("title", task_ref)
-    task_status = task_data.get("status", "unknown")
-
-    if task_status == "completed":
-        return f"Status: COMPLETED\nTask: {task_title}\nNext: Archive with `python3 ./.trellis/scripts/task.py archive {task_dir.name}` or start a new task"
-
-    # Check if context is configured (jsonl files exist and non-empty)
-    has_context = False
-    for jsonl_name in ("implement.jsonl", "check.jsonl", "spec.jsonl"):
-        jsonl_path = task_dir / jsonl_name
-        if jsonl_path.is_file() and jsonl_path.stat().st_size > 0:
-            has_context = True
-            break
-
-    has_prd = (task_dir / "prd.md").is_file()
-
-    if not has_prd:
-        return f"Status: NOT READY\nTask: {task_title}\nMissing: prd.md not created\nNext: Write PRD, then research → init-context → start"
-
-    if not has_context:
-        return f"Status: NOT READY\nTask: {task_title}\nMissing: Context not configured (no jsonl files)\nNext: Complete Phase 2 (research → init-context → start) before implementing"
-
-    return f"Status: READY\nTask: {task_title}\nNext: Continue with implement or check"
-
-
-def _load_trellis_config(trellis_dir: Path) -> tuple:
-    """Load Trellis config for session-start decisions.
-
-    Returns:
-        (is_mono, packages_dict, spec_scope, task_pkg, default_pkg)
-    """
-    scripts_dir = trellis_dir / "scripts"
-    if str(scripts_dir) not in sys.path:
-        sys.path.insert(0, str(scripts_dir))
+def collect_hardware_status(project_dir: Path) -> list:
+    lines = ["## HARDWARE"]
+    hw_path = project_dir / "hardware" / "硬件资源表.md"
+    if not hw_path.is_file():
+        lines.append("(硬件资源表未生成，可运行: bash .gd32-agent/scan-project.sh 或 init)")
+        return lines
 
     try:
-        from common.config import get_default_package, get_packages, get_spec_scope, is_monorepo  # type: ignore[import-not-found]
-        from common.paths import get_current_task  # type: ignore[import-not-found]
-
-        repo_root = trellis_dir.parent
-        is_mono = is_monorepo(repo_root)
-        packages = get_packages(repo_root) or {}
-        scope = get_spec_scope(repo_root)
-
-        # Get active task's package
-        task_pkg = None
-        current = get_current_task(repo_root)
-        if current:
-            task_json = repo_root / current / "task.json"
-            if task_json.is_file():
-                try:
-                    data = json.loads(task_json.read_text(encoding="utf-8"))
-                    if isinstance(data, dict):
-                        tp = data.get("package")
-                        if isinstance(tp, str) and tp:
-                            task_pkg = tp
-                except (json.JSONDecodeError, OSError):
-                    pass
-
-        default_pkg = get_default_package(repo_root)
-        return is_mono, packages, scope, task_pkg, default_pkg
-    except Exception:
-        return False, {}, None, None, None
+        content = hw_path.read_text(encoding="utf-8")
+        # 提取芯片型号、系列、调试器关键信息
+        key_lines = []
+        for line in content.splitlines():
+            stripped = line.strip()
+            for keyword in ("芯片型号", "芯片系列", "LINK 类型", "串口号", "波特率"):
+                if keyword in stripped and "|" in stripped:
+                    key_lines.append(stripped)
+                    break
+            if len(key_lines) >= 5:
+                break
+        if key_lines:
+            lines.extend(key_lines)
+        else:
+            lines.append("(硬件资源表存在但未填写关键字段)")
+    except (OSError, UnicodeDecodeError):
+        lines.append("(硬件资源表读取失败)")
+    return lines
 
 
-def _check_legacy_spec(trellis_dir: Path, is_mono: bool, packages: dict) -> str | None:
-    """Check for legacy spec directory structure in monorepo.
+def collect_config_status(project_dir: Path) -> list:
+    lines = ["## CONFIG"]
+    cfg_path = project_dir / ".gd32-agent" / "config.env"
+    if not cfg_path.is_file():
+        lines.append("(.gd32-agent/config.env 未配置)")
+        return lines
 
-    Returns warning message if legacy structure detected, None otherwise.
-    """
-    if not is_mono or not packages:
-        return None
-
-    spec_dir = trellis_dir / "spec"
-    if not spec_dir.is_dir():
-        return None
-
-    # Check for legacy flat spec dirs (spec/backend/, spec/frontend/ with index.md)
-    has_legacy = False
-    for legacy_name in ("backend", "frontend"):
-        legacy_dir = spec_dir / legacy_name
-        if legacy_dir.is_dir() and (legacy_dir / "index.md").is_file():
-            has_legacy = True
-            break
-
-    if not has_legacy:
-        return None
-
-    # Check which packages are missing spec/<pkg>/ directory
-    missing = [
-        name for name in sorted(packages.keys())
-        if not (spec_dir / name).is_dir()
-    ]
-
-    if not missing:
-        return None  # All packages have spec dirs
-
-    if len(missing) == len(packages):
-        return (
-            f"[!] Legacy spec structure detected: found `spec/backend/` or `spec/frontend/` "
-            f"but no package-scoped `spec/<package>/` directories.\n"
-            f"Monorepo packages: {', '.join(sorted(packages.keys()))}\n"
-            f"Please reorganize: `spec/backend/` -> `spec/<package>/backend/`"
-        )
-    return (
-        f"[!] Partial spec migration detected: packages {', '.join(missing)} "
-        f"still missing `spec/<pkg>/` directory.\n"
-        f"Please complete migration for all packages."
-    )
-
-
-def _resolve_spec_scope(
-    is_mono: bool,
-    packages: dict,
-    scope,
-    task_pkg: str | None,
-    default_pkg: str | None,
-) -> set | None:
-    """Resolve which packages should have their specs injected.
-
-    Returns:
-        Set of package names to include, or None for full scan.
-    """
-    if not is_mono or not packages:
-        return None  # Single-repo: full scan
-
-    if scope is None:
-        return None  # No scope configured: full scan
-
-    if isinstance(scope, str) and scope == "active_task":
-        if task_pkg and task_pkg in packages:
-            return {task_pkg}
-        if default_pkg and default_pkg in packages:
-            return {default_pkg}
-        return None  # Fallback to full scan
-
-    if isinstance(scope, list):
-        valid = set()
-        for entry in scope:
-            if entry in packages:
-                valid.add(entry)
-            else:
-                print(
-                    f"Warning: spec_scope contains unknown package: {entry}, ignoring",
-                    file=sys.stderr,
-                )
-
-        if valid:
-            # Warn if active task is out of scope
-            if task_pkg and task_pkg not in valid:
-                print(
-                    f"Warning: active task package '{task_pkg}' is out of configured spec_scope",
-                    file=sys.stderr,
-                )
-            return valid
-
-        # All entries invalid: fallback chain
-        print(
-            "Warning: all spec_scope entries invalid, falling back to task/default/full",
-            file=sys.stderr,
-        )
-        if task_pkg and task_pkg in packages:
-            return {task_pkg}
-        if default_pkg and default_pkg in packages:
-            return {default_pkg}
-        return None  # Full scan
-
-    return None  # Unknown scope type: full scan
-
-
-def _build_workflow_toc(workflow_path: Path) -> str:
-    """Build a compact section index for workflow.md (lazy-load the full file on demand).
-
-    Replaces full-file injection to keep additionalContext payload small.
-    The full file is accessible via: Read tool on .trellis/workflow.md
-    """
-    content = read_file(workflow_path)
-    if not content:
-        return "No workflow.md found"
-
-    toc_lines = [
-        "# Development Workflow — Section Index",
-        "Full guide: .trellis/workflow.md  (read on demand)",
-        "",
-    ]
-    for line in content.splitlines():
-        if line.startswith("## "):
-            toc_lines.append(line)
-
-    toc_lines += [
-        "",
-        "To read a section: use the Read tool on .trellis/workflow.md",
-    ]
-    return "\n".join(toc_lines)
+    try:
+        for line in cfg_path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#"):
+                lines.append(stripped)
+    except (OSError, UnicodeDecodeError):
+        lines.append("(config.env 读取失败)")
+    return lines
 
 
 def main():
@@ -319,45 +122,39 @@ def main():
         sys.exit(0)
 
     project_dir = Path(os.environ.get("CLAUDE_PROJECT_DIR", ".")).resolve()
-    trellis_dir = project_dir / ".trellis"
-
-    # Load config for scope filtering and legacy detection
-    is_mono, packages, scope_config, task_pkg, default_pkg = _load_trellis_config(trellis_dir)
-    allowed_pkgs = _resolve_spec_scope(is_mono, packages, scope_config, task_pkg, default_pkg)
-
     output = StringIO()
 
-    output.write("""<session-context>
-You are starting a new session in a Trellis-managed project.
-Read and follow all instructions below carefully.
-</session-context>
-
-""")
-
-    # Legacy migration warning
-    legacy_warning = _check_legacy_spec(trellis_dir, is_mono, packages)
-    if legacy_warning:
-        output.write(f"<migration-warning>\n{legacy_warning}\n</migration-warning>\n\n")
+    output.write("<session-context>\n")
+    output.write("GD32 嵌入式开发工程会话启动。\n")
+    output.write("请遵循 CLAUDE.md 中的安全红线和 embedded-dev/SKILL.md 的 RIPER-5 协议。\n")
+    output.write("</session-context>\n\n")
 
     output.write("<current-state>\n")
-    context_script = trellis_dir / "scripts" / "get_context.py"
-    output.write(run_script(context_script))
-    output.write("\n</current-state>\n\n")
+    output.write("=" * 40 + "\n")
+    output.write("SESSION CONTEXT\n")
+    output.write("=" * 40 + "\n\n")
 
-    # NOTE: <workflow> 和 <guidelines> 两个 block 已移除。
-    # 原因：本工程是 GD32 嵌入式项目，使用 CLAUDE.md + embedded-dev/SKILL.md 定义流程，
-    # 不依赖 Trellis 的通用 workflow / spec(backend/frontend) 模板。
-    # 移除后启动开销减少 ~1500 tokens，开发协议（RIPER-5、四文件、安全规则）完全不受影响。
+    for line in collect_git_status(project_dir):
+        output.write(line + "\n")
+    output.write("\n")
 
-    # Check task status and inject structured tag
-    task_status = _get_task_status(trellis_dir)
-    output.write(f"<task-status>\n{task_status}\n</task-status>\n\n")
+    for line in collect_hardware_status(project_dir):
+        output.write(line + "\n")
+    output.write("\n")
 
-    output.write("""<ready>
-Context loaded. Project state and task status are injected above — do NOT re-read them.
-Wait for the user's first message, then handle it following CLAUDE.md and embedded-dev/SKILL.md.
-If there is an active task, ask whether to continue it.
-</ready>""")
+    for line in collect_config_status(project_dir):
+        output.write(line + "\n")
+    output.write("\n")
+
+    output.write("=" * 40 + "\n")
+    output.write("</current-state>\n\n")
+
+    output.write(
+        "<ready>\n"
+        "Context loaded. Project state injected above — do NOT re-read it.\n"
+        "Wait for the user's first message, then handle it per CLAUDE.md and embedded-dev/SKILL.md.\n"
+        "</ready>"
+    )
 
     result = {
         "hookSpecificOutput": {
@@ -365,8 +162,6 @@ If there is an active task, ask whether to continue it.
             "additionalContext": output.getvalue(),
         }
     }
-
-    # Output JSON - stdout is already configured for UTF-8
     print(json.dumps(result, ensure_ascii=False), flush=True)
 
 
