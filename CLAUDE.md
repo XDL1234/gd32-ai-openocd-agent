@@ -30,11 +30,13 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 
 ---
 
-## 第二步：扫描工程文件
+## 第二步：扫描工程文件与硬件探测
 
 扫描启动文件(`startup_*.s`)、链接脚本(`*.ld`)、头文件(`gd32*.h`)、CMakeLists.txt、Makefile、源码头文件引用，识别芯片型号。
 
-识别优先级：启动文件名 → 链接脚本 → 头文件 → CMakeLists.txt → 源码引用。
+如果 OpenOCD 可用且调试器已连接，通过 `probe-chip.sh` 直接读取芯片 DBGMCU_IDCODE 寄存器获取精确的硬件信息（芯片型号、Flash、SRAM、Unique ID）。
+
+识别优先级：**硬件探测（OpenOCD）> 启动文件名 > 链接脚本 > 头文件 > CMakeLists.txt > 源码引用**。
 
 识别完成后自动更新 `hardware/硬件资源表.md` 中 AI 可推断的字段。
 
@@ -42,7 +44,7 @@ L3 — embedded-dev/refs/：按需加载的参考文档（API 速查、清单模
 
 ## 第三步：一致性检查
 
-将 AI 识别结果与硬件文档对比（芯片型号、系列、Flash、SRAM）。冲突时：停止执行 → 报告冲突 → 等待用户确认。
+将硬件探测结果、工程文件扫描结果与硬件文档对比（芯片型号、系列、Flash、SRAM）。冲突时：停止执行 → 报告冲突 → 等待用户确认。
 
 ---
 
@@ -85,6 +87,7 @@ bash .gd32-agent/debug.sh build/app.elf      # 寄存器调试（通用寄存器
 bash .gd32-agent/debug.sh --periph 0x40011000 16 build/app.elf  # 读外设寄存器
 bash .gd32-agent/debug.sh --batch .gd32-agent/periph-addrs.txt build/app.elf  # 批量读外设
 bash .gd32-agent/debug-loop.sh 5             # 自动调试循环（编译→烧录→寄存器→串口）
+bash .gd32-agent/probe-chip.sh               # 芯片硬件探测（通过 OpenOCD 读取 DBGMCU_IDCODE）
 bash .gd32-agent/log-with-timestamp.sh <type> <status> "<message>"  # 日志
 ```
 
@@ -104,6 +107,7 @@ bash .gd32-agent/log-with-timestamp.sh <type> <status> "<message>"  # 日志
 | 全流程 / run | build → flash → serial | 无 |
 | 环境检查 / check-env | `bash .gd32-agent/check-env.sh` | 无 |
 | 扫描 / scan | `bash .gd32-agent/scan-project.sh` | 无 |
+| 探测 / probe | `bash .gd32-agent/probe-chip.sh` | OpenOCD 已安装 |
 | 生成配置 / gen-cfg | `bash .gd32-agent/gen-openocd-cfg.sh` | 无 |
 
 **规则**：

@@ -39,6 +39,40 @@ echo "  芯片型号: $HW_CHIP"
 echo "  芯片系列: $HW_SERIES"
 echo ""
 
+# 检查是否有硬件探测结果
+PROBE_RESULT_FILE=".gd32-agent/probe-result.env"
+PROBE_CHIP=""
+PROBE_SERIES=""
+PROBE_FLASH=""
+PROBE_SRAM=""
+
+if [ -f "$PROBE_RESULT_FILE" ]; then
+    source "$PROBE_RESULT_FILE"
+    if [ "$PROBE_RESULT" = "PASS" ]; then
+        PROBE_CHIP="$PROBE_CHIP_MODEL"
+        PROBE_SERIES="$PROBE_CHIP_SERIES"
+        PROBE_FLASH="${PROBE_FLASH_KB}KB"
+        PROBE_SRAM="${PROBE_SRAM_KB}KB"
+        echo "硬件探测结果（OpenOCD）:"
+        echo "  芯片型号: $PROBE_CHIP"
+        echo "  芯片系列: $PROBE_SERIES"
+        echo "  Flash: $PROBE_FLASH"
+        echo "  SRAM: $PROBE_SRAM"
+        echo ""
+
+        # 探测结果与硬件资源表对比
+        if [ -n "$HW_SERIES" ] && [ -n "$PROBE_SERIES" ] && [ "$PROBE_SERIES" != "unknown" ]; then
+            if echo "$HW_SERIES" | grep -qi "$(echo "$PROBE_SERIES" | sed 's/xx.*//')"; then
+                echo "  ✅ 硬件探测与硬件资源表一致"
+            else
+                echo "  ⚠️ 硬件探测与硬件资源表不一致: 探测=$PROBE_SERIES vs 文档=$HW_SERIES"
+                ISSUES=$((ISSUES + 1))
+            fi
+        fi
+        echo ""
+    fi
+fi
+
 # 从启动文件检测
 echo "--- 启动文件检测 ---"
 STARTUP=$(find . -name "startup_*.s" -o -name "startup_*.S" 2>/dev/null | head -1)

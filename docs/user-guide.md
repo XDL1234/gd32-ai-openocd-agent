@@ -350,6 +350,8 @@ chmod +x batch_flash.sh
 | `.gd32-agent/serial.sh` | 串口观察脚本 |
 | `.gd32-agent/debug.sh` | 寄存器调试脚本（通用/外设/批量模式） |
 | `.gd32-agent/debug-loop.sh` | 自动调试循环（编译→烧录→寄存器→串口） |
+| `.gd32-agent/probe-chip.sh` | 芯片硬件探测（通过 OpenOCD 读取 DBGMCU_IDCODE） |
+| `.gd32-agent/gd32-chip-db.sh` | GD32 芯片 ID 数据库 |
 | `.gd32-agent/check-env.sh` | 环境检查脚本 |
 | `.gd32-agent/scan-project.sh` | 工程扫描脚本 |
 | `.gd32-agent/gen-openocd-cfg.sh` | 自动生成 OpenOCD 配置 |

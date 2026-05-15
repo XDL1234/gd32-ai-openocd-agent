@@ -7,7 +7,17 @@
 
 ## [未发布]
 
+### 新增
+- 芯片硬件探测脚本 `probe-chip.sh`：通过 OpenOCD 直接读取芯片 DBGMCU_IDCODE、Flash Size、Unique ID
+- GD32 芯片 ID 数据库 `gd32-chip-db.sh`：覆盖 GD32F1xx/F3xx/F4xx/E2xx 系列的 Device ID 映射
+- init 流程新增 Step 2.5（硬件探测）：在工程文件扫描后通过 OpenOCD 在线识别芯片，与扫描结果交叉验证
+- 快捷指令 `探测 / probe`：直接执行芯片硬件探测
+
 ### 变更
+- 芯片识别优先级更新：硬件探测（OpenOCD）> 启动文件名 > 链接脚本 > 头文件 > CMakeLists.txt > 源码引用
+- `verify-hardware.sh` 新增读取 `probe-result.env` 进行一致性验证
+- `install.sh` 新增 `probe-chip.sh` 和 `gd32-chip-db.sh` 的复制
+- 更新所有文档（README、README_EN、完整说明文档、user-guide）反映新功能
 - 删除废弃的 `hardware/hardware.md`，统一使用 `hardware/硬件资源表.md`
 - 更新 README_EN.md：修复步骤编号重复、硬件配置改为表格格式、补充完整脚本列表和 Skills 表格
 - 更新 CONTRIBUTING.md：修复旧仓库名 `gd32-ai-openocd-agent` → `gd32-agent`

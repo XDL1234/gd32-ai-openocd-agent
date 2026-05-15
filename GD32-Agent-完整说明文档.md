@@ -128,7 +128,7 @@ bash /path/to/gd32-agent/install.sh
    - `docs/{analysis,tasks,reviews,bugs,testing}` — 文档目录
    - `.claude/commands/gd32-agent/` — Claude 命令
    - `.claude/skills/` — Skills 目录
-5. 复制 `.gd32-agent/` 下所有脚本（check-env.sh、scan-project.sh、build.sh、flash.sh、serial.sh、debug.sh、debug-loop.sh、detect-serial.sh 等）
+5. 复制 `.gd32-agent/` 下所有脚本（check-env.sh、scan-project.sh、build.sh、flash.sh、serial.sh、debug.sh、debug-loop.sh、detect-serial.sh、probe-chip.sh、gd32-chip-db.sh 等）
 6. 复制 Claude 命令（`init.md`）
 7. 复制 Skills（gd32-openocd、hardware-analysis、document-skills、superpowers-skills）
 8. 复制 `embedded-dev/` Skill 目录（RIPER-5 完整协议）
@@ -189,6 +189,7 @@ gd32-agent init
 | 0 | 会话恢复检测 | 如果存在四文件，执行静默恢复（读取四文件 → 展示简短摘要 → 询问继续还是新任务） |
 | 1 | 环境检查 | `bash .gd32-agent/check-env.sh`，检查 OpenOCD、GCC、GDB、Make、Python 等工具 |
 | 2 | 工程扫描与自动配置 | `bash .gd32-agent/scan-project.sh` + 交互确认调试器、串口、芯片型号，自动回填 config.env 和 openocd.cfg |
+| 2.5 | 芯片硬件探测 | `bash .gd32-agent/probe-chip.sh`，通过 OpenOCD 读取 DBGMCU_IDCODE / Flash / UID，与工程扫描结果交叉验证 |
 | 3 | 生成扫描报告 | 输出识别到的芯片型号、系列、固件库类型、工程类型 |
 | 4 | 用户确认 | 展示扫描结果，请用户确认或修正 |
 | 5 | 创建目录结构 | 确保所有必要目录存在 |
@@ -523,11 +524,12 @@ bash .gd32-agent/debug-loop.sh
 
 ### 7.3 芯片识别优先级
 
-1. 启动文件名（`startup_gd32f470.s` → GD32F470）
-2. 链接脚本（`gd32f470vet6_flash.ld` → GD32F470VET6）
-3. 头文件（`gd32f4xx.h` → GD32F4xx 系列）
-4. CMakeLists.txt 中的定义
-5. 源码中的头文件引用
+1. **硬件探测（OpenOCD 读取 DBGMCU_IDCODE）**— 最高优先级，直接读芯片寄存器
+2. 启动文件名（`startup_gd32f470.s` → GD32F470）
+3. 链接脚本（`gd32f470vet6_flash.ld` → GD32F470VET6）
+4. 头文件（`gd32f4xx.h` → GD32F4xx 系列）
+5. CMakeLists.txt 中的定义
+6. 源码中的头文件引用
 
 ### 7.4 固件库识别
 
@@ -1101,7 +1103,25 @@ bash .gd32-agent/scan-project.sh
 
 输出：芯片型号、芯片系列、固件库类型、工程类型
 
-### 13.4 build.sh — 编译脚本
+### 13.4 probe-chip.sh — 芯片硬件探测脚本
+
+```bash
+bash .gd32-agent/probe-chip.sh                    # 自动探测
+bash .gd32-agent/probe-chip.sh --interface daplink # 指定调试器类型
+bash .gd32-agent/probe-chip.sh -v                  # 详细输出
+bash .gd32-agent/probe-chip.sh -t 15               # 自定义超时
+```
+
+通过 OpenOCD 直接连接芯片 SWD 接口，一次性读取：
+- DBGMCU_IDCODE（0xE0042000 / 0x40015800）→ 芯片型号和系列
+- Flash Size Register（0x1FFF7A22 / 0x1FFFF7E0）→ Flash 大小
+- Unique ID（0x1FFF7A10 / 0x1FFFF7E8）→ 芯片唯一标识
+
+自动生成最小探测配置，按优先级尝试 DAPLink → ST-Link → J-Link。结果保存在 `.gd32-agent/probe-result.env`。
+
+容错设计：OpenOCD 未安装或调试器未连接时不阻塞流程，始终返回退出码 0。
+
+### 13.5 build.sh — 编译脚本
 
 ```bash
 bash .gd32-agent/build.sh
@@ -1647,6 +1667,7 @@ check tools, 检查所有mcp工具
 | 全流程 / run | build → flash → serial | 无 |
 | 环境检查 / check-env | `bash .gd32-agent/check-env.sh` | 无 |
 | 扫描 / scan | `bash .gd32-agent/scan-project.sh` | 无 |
+| 探测 / probe | `bash .gd32-agent/probe-chip.sh` | OpenOCD 已安装 |
 | 生成配置 / gen-cfg | `bash .gd32-agent/gen-openocd-cfg.sh` | 无 |
 
 **规则**：
@@ -1689,6 +1710,7 @@ check tools, 检查所有mcp工具
 | 串口观察 (`serial.sh`) | ✅ | ✅ | ✅ |
 | 寄存器调试 (`debug.sh`) | ✅ | ✅ | ✅ |
 | 自动调试循环 (`debug-loop.sh`) | ✅ | ✅ | ✅ |
+| 芯片硬件探测 (`probe-chip.sh`) | ✅ | ✅ | ✅ |
 | 串口检测 (`detect-serial.sh`) | ✅ | ✅ | ✅ |
 | Keil MDK 编译 | ✅ | ❌ | ❌ |
 | IAR 编译 | ✅ | ❌ | ❌ |
@@ -1771,6 +1793,8 @@ your-gd32-project/
 │   ├── serial.sh                       # 串口脚本（跨平台）
 │   ├── debug.sh                        # 寄存器调试（通用/外设/批量模式）
 │   ├── debug-loop.sh                   # 自动调试循环（编译→烧录→寄存器→串口）
+│   ├── probe-chip.sh                   # 芯片硬件探测（通过 OpenOCD 读取 DBGMCU_IDCODE）
+│   ├── gd32-chip-db.sh                 # GD32 芯片 ID 数据库
 │   ├── detect-serial.sh                # 串口自动检测（跨平台）
 │   ├── gen-openocd-cfg.sh              # 自动生成 OpenOCD 配置
 │   ├── verify-hardware.sh              # 硬件一致性检查
@@ -1827,6 +1851,9 @@ bash .gd32-agent/check-env.sh
 
 # 工程扫描
 bash .gd32-agent/scan-project.sh
+
+# 芯片硬件探测（通过 OpenOCD 读取芯片 ID）
+bash .gd32-agent/probe-chip.sh
 
 # 编译
 bash .gd32-agent/build.sh

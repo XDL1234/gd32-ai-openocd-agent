@@ -60,21 +60,16 @@ EWARM/settings/
 # VS Code
 .vscode/
 
-# Trellis 临时文件
-.trellis/.developer
-.trellis/workspace/
-
-# Agent 日志
+# Trellis
+.trellis/
 .gd32-agent/*.log
 .gd32-agent/register-dump.md
 .gd32-agent/logs/
+.gd32-agent/probe-configs/
+.gd32-agent/probe-result.env
 
 # Claude 本地设置
 .claude/settings.local.json
-
-# Trellis 临时文件
-.trellis/.developer
-.trellis/workspace/
 
 # 系统文件
 .DS_Store

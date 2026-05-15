@@ -262,6 +262,8 @@ your-gd32-project/
 │   ├── serial.sh            # 串口脚本
 │   ├── debug.sh             # 寄存器调试（支持通用/外设/批量模式）
 │   ├── debug-loop.sh        # 自动调试循环（编译→烧录→寄存器→串口）
+│   ├── probe-chip.sh        # 芯片硬件探测（通过 OpenOCD 读取 DBGMCU_IDCODE）
+│   ├── gd32-chip-db.sh      # GD32 芯片 ID 数据库
 │   ├── gen-openocd-cfg.sh   # 自动生成 OpenOCD 配置
 │   ├── verify-hardware.sh   # 硬件一致性检查
 │   ├── detect-serial.sh     # 串口自动检测
@@ -285,6 +287,16 @@ bash .gd32-agent/check-env.sh
 
 ```bash
 bash .gd32-agent/scan-project.sh
+```
+
+### 芯片硬件探测
+
+通过 OpenOCD 直接连接芯片，读取 DBGMCU_IDCODE / Flash Size / Unique ID：
+
+```bash
+bash .gd32-agent/probe-chip.sh                    # 自动探测
+bash .gd32-agent/probe-chip.sh --interface daplink # 指定调试器类型
+bash .gd32-agent/probe-chip.sh -v                  # 详细输出
 ```
 
 ### 编译工程
@@ -402,6 +414,7 @@ bash .gd32-agent/log-with-timestamp.sh flash SUCCESS "烧录完成"
 | 串口观察 (`serial.sh`) | ✅ | ✅ | ✅ |
 | 寄存器调试 (`debug.sh`) | ✅ | ✅ | ✅ |
 | 自动调试循环 (`debug-loop.sh`) | ✅ | ✅ | ✅ |
+| 芯片硬件探测 (`probe-chip.sh`) | ✅ | ✅ | ✅ |
 | 串口检测 (`detect-serial.sh`) | ✅ | ✅ | ✅ |
 | Keil MDK 编译 | ✅ | ❌ | ❌ |
 | IAR 编译 | ✅ | ❌ | ❌ |

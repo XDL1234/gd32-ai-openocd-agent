@@ -203,6 +203,7 @@ git push
 - 开始时声明："初步分析表明，用户请求最适合 [MODE_NAME] 阶段。将以 [MODE_NAME] 模式启动协议。"
 ### 芯片平台识别（RESEARCH 核心步骤，在启动检查之后）
 通过检查以下内容识别芯片平台和固件库：
+- **硬件探测**（最高优先级）：如果 OpenOCD 可用且调试器已连接，通过 `bash .gd32-agent/probe-chip.sh` 读取芯片 DBGMCU_IDCODE 寄存器，直接获取芯片型号、系列、Flash/SRAM 大小
 - **文件包含**：`stm32f10x.h`→StdPeriph、`stm32xxxx_hal.h`→HAL、`esp_system.h`→ESP-IDF、`Arduino.h`→Arduino、`gd32f4xx.h`/`gd32f30x.h`/`gd32f10x.h`→GD32 标准库
 - **API 调用**：`GPIO_Init`→StdPeriph、`HAL_GPIO_Init`→HAL、`gpio_set_level`→ESP-IDF、`digitalWrite`→Arduino、`gpio_mode_set`/`rcu_periph_clock_enable`→GD32
 - **项目结构**：`stm32f10x_conf.h`→StdPeriph、`sdkconfig`→ESP-IDF、`platformio.ini`→PlatformIO、`gd32f4xx_libopt.h`→GD32

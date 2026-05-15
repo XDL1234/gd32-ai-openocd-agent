@@ -196,6 +196,8 @@ your-gd32-project/
 │   ├── serial.sh            # Serial Script
 │   ├── debug.sh             # Debug Script (general/peripheral/batch modes)
 │   ├── debug-loop.sh        # Auto Debug Loop (build→flash→registers→serial)
+│   ├── probe-chip.sh        # Chip Hardware Probe (read DBGMCU_IDCODE via OpenOCD)
+│   ├── gd32-chip-db.sh      # GD32 Chip ID Database
 │   ├── gen-openocd-cfg.sh   # Auto-generate OpenOCD Config
 │   ├── verify-hardware.sh   # Hardware Consistency Check
 │   ├── detect-serial.sh     # Serial Port Auto-detection
@@ -216,6 +218,15 @@ bash .gd32-agent/check-env.sh
 
 ```bash
 bash .gd32-agent/scan-project.sh
+```
+
+### Chip Hardware Probe
+
+Read DBGMCU_IDCODE / Flash Size / Unique ID directly from the chip via OpenOCD:
+
+```bash
+bash .gd32-agent/probe-chip.sh                    # Auto probe
+bash .gd32-agent/probe-chip.sh --interface daplink # Specify debugger type
 ```
 
 ### Build Project

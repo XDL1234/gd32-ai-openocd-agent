@@ -101,6 +101,46 @@ bash .gd32-agent/scan-project.sh
   ```
 - 更新 `hardware/硬件资源表.md`（芯片型号、调试器、串口配置）
 
+### Step 2.5: 芯片硬件探测（通过 OpenOCD）
+
+在工程扫描完成后，尝试通过 OpenOCD 直接连接芯片读取硬件信息：
+
+```bash
+bash .gd32-agent/probe-chip.sh
+```
+
+**如果用户在 Step 2 中已确认调试器类型**，可传入提示加快探测：
+```bash
+bash .gd32-agent/probe-chip.sh --interface daplink
+```
+
+**探测结果处理**：
+
+读取 `.gd32-agent/probe-result.env` 获取探测结果，根据 `PROBE_RESULT` 值分三种情况：
+
+1. **`PROBE_RESULT=PASS`（探测成功）**：
+   - 与 Step 2 的工程文件扫描结果进行交叉验证
+   - 验证规则：
+
+     | 工程文件结果 | 探测结果 | 处理方式 |
+     |-------------|---------|---------|
+     | 相同系列 | 相同系列 | ✅ 一致，自动确认，显示"工程文件与芯片硬件匹配" |
+     | 某个系列 | 不同系列 | ⚠️ 冲突！列出两种来源的结果，等待用户确认以哪个为准 |
+     | unknown | 某个系列 | 使用探测结果填充 |
+
+   - 自动将探测结果更新到 `hardware/硬件资源表.md`（来源标记为"硬件探测"）
+   - 如果探测到了调试器类型且 Step 2 未确认调试器，直接采用探测到的调试器类型（跳过选择题）
+   - 探测到的 Flash/SRAM 值优先级高于文件推断
+
+2. **`PROBE_RESULT=FAIL`（连接失败）**：
+   - 显示 "⚠️ 芯片探测跳过：无法连接调试器（调试器未连接或目标板未上电）"
+   - **不阻塞流程**，继续使用工程文件扫描结果
+   - 提示用户后续可手动运行 `bash .gd32-agent/probe-chip.sh` 重试
+
+3. **`PROBE_RESULT=SKIP`（OpenOCD 未安装）**：
+   - 显示 "⚠️ 芯片探测跳过：未安装 OpenOCD"
+   - **不阻塞流程**
+
 ### Step 3: 生成工程文档
 
 生成 `docs/analysis/project-scan-report.md`，包含：
