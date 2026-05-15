@@ -3,7 +3,7 @@
 # 将 gd32-agent 配置文件复制到当前工程目录
 # 支持首次安装和增量更新
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 
 echo "=========================================="
 echo "GD32 AI Agent 安装 v$VERSION"
@@ -123,11 +123,11 @@ fi
 USER_CONFIG_FILES=(
     ".gd32-agent/config.env"
     ".gd32-agent/openocd.cfg"
+    ".claude/settings.json"
     "hardware/硬件资源表.md"
     "docs/编辑清单.md"
     "docs/研究发现.md"
     "docs/项目规划清单.md"
-    "workflow/development-flow.md"
     "CLAUDE.md"
 )
 
@@ -166,12 +166,13 @@ echo ""
 
 # 创建目录结构
 echo "[1/9] 创建目录结构..."
-mkdir -p .gd32-agent/logs
+mkdir -p .gd32-agent/logs .gd32-agent/lib
 mkdir -p hardware
-mkdir -p workflow
 mkdir -p docs/{analysis,tasks,reviews,bugs,testing}
 mkdir -p .claude/commands/gd32-agent
 mkdir -p .claude/skills
+mkdir -p .claude/agents
+mkdir -p .claude/hooks
 
 # 复制 .gd32-agent 脚本
 echo "[2/9] 复制 gd32-agent 脚本..."
@@ -183,12 +184,17 @@ for f in check-env.sh scan-project.sh build.sh flash.sh serial.sh debug.sh \
     fi
 done
 
+# 复制公共库（lib/common.sh）—— 所有脚本依赖它
+if [ -f "$SCRIPT_DIR/.gd32-agent/lib/common.sh" ]; then
+    cp "$SCRIPT_DIR/.gd32-agent/lib/common.sh" .gd32-agent/lib/
+fi
+
 # config.env 和 openocd.cfg 走安全复制
 safe_copy "$SCRIPT_DIR/.gd32-agent/config.env" ".gd32-agent/config.env"
 safe_copy "$SCRIPT_DIR/.gd32-agent/openocd.cfg" ".gd32-agent/openocd.cfg"
 
 # 设置执行权限
-chmod +x .gd32-agent/*.sh 2>/dev/null
+chmod +x .gd32-agent/*.sh .gd32-agent/lib/*.sh 2>/dev/null
 
 # 复制 Claude 命令
 echo "[3/9] 复制 Claude 命令..."
@@ -202,6 +208,25 @@ cp -r "$SCRIPT_DIR/.claude/skills/gd32-openocd" .claude/skills/ 2>/dev/null || t
 cp -r "$SCRIPT_DIR/.claude/skills/hardware-analysis" .claude/skills/ 2>/dev/null || true
 cp -r "$SCRIPT_DIR/.claude/skills/document-skills" .claude/skills/ 2>/dev/null || true
 cp -r "$SCRIPT_DIR/.claude/skills/superpowers-skills" .claude/skills/ 2>/dev/null || true
+
+# 复制 Agents（嵌入式专用多 Agent 角色：scout/builder/verifier/dispatch）
+echo "[4.5/9] 复制 Agents..."
+for agent in scout builder verifier dispatch; do
+    if [ -f "$SCRIPT_DIR/.claude/agents/$agent.md" ]; then
+        cp "$SCRIPT_DIR/.claude/agents/$agent.md" .claude/agents/
+    fi
+done
+
+# 复制 Hooks（session-start / inject-subagent-context / ralph-loop / statusline）
+echo "[4.6/9] 复制 Hooks..."
+for hook in session-start inject-subagent-context ralph-loop statusline; do
+    if [ -f "$SCRIPT_DIR/.claude/hooks/$hook.py" ]; then
+        cp "$SCRIPT_DIR/.claude/hooks/$hook.py" .claude/hooks/
+    fi
+done
+
+# 复制 settings.json（hooks 注册配置）—— 安全复制，不覆盖用户自定义
+safe_copy "$SCRIPT_DIR/.claude/settings.json" ".claude/settings.json"
 
 # 复制 embedded-dev skill
 echo "[5/9] 复制 embedded-dev skill..."
@@ -287,11 +312,12 @@ echo "=========================================="
 echo ""
 echo "已创建的目录："
 echo "  - hardware/          (硬件文档)"
-echo "  - workflow/          (开发流程)"
 echo "  - docs/              (文档目录)"
-echo "  - .gd32-agent/       (Agent 脚本)"
-echo "  - .claude/           (Claude 配置)"
-echo "  - embedded-dev/      (开发协议 Skill)"
+echo "  - .gd32-agent/       (Agent 脚本 + lib 公共库)"
+echo "  - .claude/agents/    (嵌入式多 Agent: scout/builder/verifier/dispatch)"
+echo "  - .claude/hooks/     (session-start / subagent-context 注入)"
+echo "  - .claude/skills/    (embedded-dev / gd32-openocd / document-skills 等)"
+echo "  - embedded-dev/      (RIPER-5 开发协议 + refs + modes)"
 echo ""
 if [ "$MODE" = "update" ]; then
     echo "已更新: 脚本、命令、Skills、协议"

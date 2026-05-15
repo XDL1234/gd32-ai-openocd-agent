@@ -205,9 +205,6 @@ mkdir -p hardware
 # 创建 docs 文件夹
 mkdir -p docs/{analysis,tasks,reviews,bugs,testing}
 
-# 创建 workflow 文件夹
-mkdir -p workflow
-
 # 创建 skills 文件夹
 mkdir -p .claude/skills
 ```
@@ -274,49 +271,7 @@ mkdir -p .claude/skills
 | 解除读保护 | 否 |
 ```
 
-#### 6.2 workflow/development-flow.md
-
-生成开发流程文档：
-
-```markdown
-# 开发流程文档
-
-## 用户需求区域
-
-（在此填写用户需求，Agent 会根据需求调整开发流程）
-
----
-
-## 最高优先级规则
-
-必须严格遵守本文件。如果冲突，必须停止并报告。
-
-## 标准开发流程
-
-1. 读取硬件文档
-2. 扫描工程目录
-3. 生成工程分析文档
-4. 根据用户需求生成任务文档
-5. 使用 Plan Mode 制定执行计划
-6. 用户确认计划后再修改代码
-7. 修改代码后进行代码审查
-8. 编译工程
-9. 使用 OpenOCD 下载烧录
-10. 观察串口输出
-11. 观察寄存器和 GDB 状态
-12. 根据日志和寄存器结果查找 bug
-13. 生成任务结果文档
-
-## 禁止行为
-
-- 禁止未确认直接全片擦除
-- 禁止未确认修改 Option Bytes
-- 禁止未确认解除读保护
-- 禁止跳过硬件文档直接修改代码
-- 禁止编译失败后继续烧录
-```
-
-#### 6.3 Skills 文件
+#### 6.2 Skills 文件
 
 复制默认 Skills 到用户工程：
 
@@ -335,12 +290,12 @@ cp -r .claude/skills/* user-project/.claude/skills/
 ## 创建的目录
 - hardware/
 - docs/
-- workflow/
 - .claude/skills/
+- .claude/agents/
+- .claude/hooks/
 
 ## 创建的文件
 - hardware/硬件资源表.md
-- workflow/development-flow.md
 - docs/analysis/project-scan-report.md
 - .claude/skills/gd32-openocd/SKILL.md
 - .claude/skills/hardware-analysis/SKILL.md
@@ -348,9 +303,8 @@ cp -r .claude/skills/* user-project/.claude/skills/
 - .claude/skills/superpowers-skills/（系统化调试/头脑风暴等）
 
 ## 下一步
-1. 编辑 hardware/硬件资源表.md，填写引脚信息
-2. 编辑 workflow/development-flow.md，填写用户需求
-3. 开始开发任务
+1. 编辑 hardware/硬件资源表.md，补全引脚信息
+2. 描述你的开发需求，Agent 会自动启动 RIPER-5 协议
 ```
 
 ---

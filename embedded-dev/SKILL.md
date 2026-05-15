@@ -52,27 +52,10 @@ triggers:
   - "netlist"
   - "healthcheck"
   - "mcp检查"
-hooks:
-  UserPromptSubmit:
-    - hooks:
-        - type: command
-          command: "for f in 项目规划清单.md 编辑清单.md 硬件资源表.md 研究发现.md; do test -f \"$f\" && echo \"[embedded-dev] 检测到 $f，请确保已读取最新内容。\" || true; done"
-  PreToolUse:
-    - matcher: "Write|Edit|Bash"
-      hooks:
-        - type: command
-          command: "test -f 项目规划清单.md && (echo '[embedded-dev] 项目规划清单（前20行）:' && head -20 项目规划清单.md 2>/dev/null) || true; test -f 硬件资源表.md && (echo '[embedded-dev] 硬件资源表（芯片信息）:' && sed -n '/## 芯片与开发环境/,/## 引脚分配表/p' 硬件资源表.md 2>/dev/null | head -15) || true; test -f 研究发现.md && (echo '[embedded-dev] 研究发现（最近发现）:' && sed -n '/## 技术发现/,/^## /p' 研究发现.md 2>/dev/null | head -20) || true"
-  PostToolUse:
-    - matcher: "Write|Edit|Bash"
-      hooks:
-        - type: command
-          command: "test -f 编辑清单.md && echo '[embedded-dev] 代码已修改，请更新 编辑清单.md、硬件资源表.md（如有引脚变更）、研究发现.md（如有新发现）。' || true"
 ---
-<!-- Hooks 环境依赖说明：
-本 Skill 的 hooks 使用 POSIX shell 语法（test、head、sed、for/do 等），
-需要在 bash/zsh 环境下执行。Claude Code 默认使用 zsh shell，
-因此 hooks 应能正常工作。若在纯 PowerShell 环境下使用，
-hooks 功能可能受限，但不影响核心协议流程。
+<!-- 四文件提醒 hooks 已迁移到 .claude/settings.json（UserPromptSubmit / PreToolUse / PostToolUse）。
+     Skill frontmatter 中的 hooks 字段不被 Claude Code 加载，原配置实为死代码。
+     settings.json 中的 hooks 已修正路径：docs/{项目规划清单,编辑清单,研究发现}.md、hardware/硬件资源表.md。
 -->
 # RIPER-5 嵌入式芯片开发协议
 

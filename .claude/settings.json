@@ -8,30 +8,28 @@
       {
         "matcher": "startup",
         "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/session-start.py",
-            "timeout": 10
-          }
+          { "type": "command", "command": "python .claude/hooks/session-start.py", "timeout": 10 }
         ]
       },
       {
         "matcher": "clear",
         "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/session-start.py",
-            "timeout": 10
-          }
+          { "type": "command", "command": "python .claude/hooks/session-start.py", "timeout": 10 }
         ]
       },
       {
         "matcher": "compact",
         "hooks": [
+          { "type": "command", "command": "python .claude/hooks/session-start.py", "timeout": 10 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/session-start.py",
-            "timeout": 10
+            "command": "for f in docs/项目规划清单.md docs/编辑清单.md docs/研究发现.md hardware/硬件资源表.md; do test -f \"$f\" && echo \"[embedded-dev] 检测到 $f，请确保已读取最新内容。\" || true; done"
           }
         ]
       }
@@ -40,20 +38,32 @@
       {
         "matcher": "Task",
         "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/inject-subagent-context.py",
-            "timeout": 30
-          }
+          { "type": "command", "command": "python .claude/hooks/inject-subagent-context.py", "timeout": 30 }
         ]
       },
       {
         "matcher": "Agent",
         "hooks": [
+          { "type": "command", "command": "python .claude/hooks/inject-subagent-context.py", "timeout": 30 }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/inject-subagent-context.py",
-            "timeout": 30
+            "command": "test -f docs/项目规划清单.md && (echo '[embedded-dev] 项目规划清单（前20行）:' && head -20 docs/项目规划清单.md 2>/dev/null) || true; test -f hardware/硬件资源表.md && (echo '[embedded-dev] 硬件资源表（芯片信息）:' && sed -n '/## 芯片与开发环境/,/## 引脚分配表/p' hardware/硬件资源表.md 2>/dev/null | head -15) || true; test -f docs/研究发现.md && (echo '[embedded-dev] 研究发现（最近发现）:' && sed -n '/## 技术发现/,/^## /p' docs/研究发现.md 2>/dev/null | head -20) || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f docs/编辑清单.md && echo '[embedded-dev] 代码已修改，请更新 docs/编辑清单.md、hardware/硬件资源表.md（如有引脚变更）、docs/研究发现.md（如有新发现）。' || true"
           }
         ]
       }
@@ -62,11 +72,7 @@
       {
         "matcher": "check",
         "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/ralph-loop.py",
-            "timeout": 10
-          }
+          { "type": "command", "command": "python .claude/hooks/ralph-loop.py", "timeout": 10 }
         ]
       }
     ]
