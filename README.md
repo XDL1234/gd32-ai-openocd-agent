@@ -7,8 +7,6 @@
 
 > 基于 Claude Code 的 GD32 嵌入式自动化开发 Agent
 
-<!-- [English](./README_EN.md) | -->[中文](./README.md)
-
 ## 简介
 
 GD32 AI Agent 是一个基于 Claude Code 的自动化开发工具，专为 GD32 嵌入式开发设计。它能够：
