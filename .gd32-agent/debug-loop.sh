@@ -1,152 +1,147 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # GD32 自动调试循环脚本
 # 编译 → 烧录 → 寄存器读取 → 串口观察，一键执行全流程
 # 用于 Bug 自动定位：Agent 调用此脚本收集硬件证据
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$PROJECT_DIR" || exit 1
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/common.sh"
+load_config
 
-TIMESTAMP=$(date "+%Y-%m-%d_%H%M%S")
-EVIDENCE_DIR=".gd32-agent/logs/debug-$TIMESTAMP"
+cd "$PROJECT_DIR"
+
+TIMESTAMP=$(ts_compact)
+EVIDENCE_DIR="$AGENT_DIR/logs/debug-$TIMESTAMP"
 mkdir -p "$EVIDENCE_DIR"
 
 SERIAL_TIMEOUT="${1:-5}"
-PERIPH_ADDRS_FILE="${2:-.gd32-agent/periph-addrs.txt}"
+PERIPH_ADDRS_FILE="${2:-$AGENT_DIR/periph-addrs.txt}"
 
-echo "=========================================="
-echo "GD32 自动调试循环"
-echo "=========================================="
-echo "时间: $TIMESTAMP"
-echo "证据目录: $EVIDENCE_DIR"
-echo "串口超时: ${SERIAL_TIMEOUT}s"
-echo "=========================================="
+banner "GD32 自动调试循环"
+log_info "时间: $TIMESTAMP"
+log_info "证据目录: $EVIDENCE_DIR"
+log_info "串口超时: ${SERIAL_TIMEOUT}s"
+
+# 写入汇总信息（无论后续是否失败都尽量记录）
+write_summary() {
+    local build_result="${1:-FAIL}"
+    local build_exit="${2:-1}"
+    local flash_result="${3:-SKIP}"
+    local flash_exit="${4:-0}"
+    local reg_result="${5:-SKIP}"
+    local reg_exit="${6:-0}"
+    local serial_result="${7:-SKIP}"
+    local serial_exit="${8:-0}"
+    local firmware="${9:-}"
+    local elf="${10:-}"
+    {
+        echo "BUILD_RESULT=$build_result"
+        echo "BUILD_EXIT=$build_exit"
+        echo "FLASH_RESULT=$flash_result"
+        echo "FLASH_EXIT=$flash_exit"
+        echo "REG_RESULT=$reg_result"
+        echo "REG_EXIT=$reg_exit"
+        echo "SERIAL_RESULT=$serial_result"
+        echo "SERIAL_EXIT=$serial_exit"
+        echo "FIRMWARE=$firmware"
+        echo "ELF_FILE=$elf"
+        echo "EVIDENCE_DIR=$EVIDENCE_DIR"
+        echo "TIMESTAMP=$TIMESTAMP"
+    } > "$EVIDENCE_DIR/summary.env"
+}
 
 # Step 1: 编译
-echo ""
-echo "[1/4] 编译..."
-bash .gd32-agent/build.sh > "$EVIDENCE_DIR/build.log" 2>&1
+log_step "[1/4] 编译"
+set +e
+bash "$SCRIPT_DIR/build.sh" > "$EVIDENCE_DIR/build.log" 2>&1
 BUILD_EXIT=$?
+set -e
 
 if [ $BUILD_EXIT -ne 0 ]; then
-    echo "  编译失败（退出码: $BUILD_EXIT）"
-    echo "BUILD_RESULT=FAIL" > "$EVIDENCE_DIR/summary.env"
-    echo "BUILD_EXIT=$BUILD_EXIT" >> "$EVIDENCE_DIR/summary.env"
-    echo ""
-    echo "=========================================="
-    echo "调试循环终止：编译失败"
-    echo "编译日志: $EVIDENCE_DIR/build.log"
-    echo "=========================================="
+    log_error "编译失败（退出码: $BUILD_EXIT）"
+    write_summary FAIL "$BUILD_EXIT"
+    banner "调试循环终止：编译失败"
+    log_info "编译日志: $EVIDENCE_DIR/build.log"
     cat "$EVIDENCE_DIR/build.log"
     exit 1
 fi
-echo "  编译成功"
+log_ok "编译成功"
 
-# 查找固件文件
-FIRMWARE=""
-for f in build/*.hex build/*.bin build/*.elf; do
-    [ -f "$f" ] && FIRMWARE="$f" && break
-done
-if [ -z "$FIRMWARE" ]; then
-    echo "  错误: 编译成功但未找到固件文件"
-    exit 1
-fi
-echo "  固件: $FIRMWARE"
-
-# 查找 ELF（用于寄存器调试）
-ELF_FILE=""
-for f in build/*.elf; do
-    [ -f "$f" ] && ELF_FILE="$f" && break
-done
+# 查找固件与 ELF
+FIRMWARE=$(find_firmware "$PROJECT_DIR/build") || { log_error "编译成功但未找到固件文件"; exit 1; }
+ELF_FILE=$(find_elf "$PROJECT_DIR/build" || true)
+log_info "固件: $FIRMWARE"
+[ -n "$ELF_FILE" ] && log_info "ELF:  $ELF_FILE"
 
 # Step 2: 烧录
-echo ""
-echo "[2/4] 烧录..."
-bash .gd32-agent/flash.sh "$FIRMWARE" > "$EVIDENCE_DIR/flash.log" 2>&1
+log_step "[2/4] 烧录"
+set +e
+bash "$SCRIPT_DIR/flash.sh" "$FIRMWARE" > "$EVIDENCE_DIR/flash.log" 2>&1
 FLASH_EXIT=$?
+set -e
 
 if [ $FLASH_EXIT -ne 0 ]; then
-    echo "  烧录失败（退出码: $FLASH_EXIT）"
-    echo "BUILD_RESULT=PASS" > "$EVIDENCE_DIR/summary.env"
-    echo "FLASH_RESULT=FAIL" >> "$EVIDENCE_DIR/summary.env"
-    echo "FLASH_EXIT=$FLASH_EXIT" >> "$EVIDENCE_DIR/summary.env"
-    echo ""
-    echo "=========================================="
-    echo "调试循环终止：烧录失败"
-    echo "烧录日志: $EVIDENCE_DIR/flash.log"
-    echo "=========================================="
+    log_error "烧录失败（退出码: $FLASH_EXIT）"
+    write_summary PASS "$BUILD_EXIT" FAIL "$FLASH_EXIT"
+    banner "调试循环终止：烧录失败"
+    log_info "烧录日志: $EVIDENCE_DIR/flash.log"
     cat "$EVIDENCE_DIR/flash.log"
     exit 2
 fi
-echo "  烧录成功"
+log_ok "烧录成功"
 
 # Step 3: 寄存器读取
-echo ""
-echo "[3/4] 读取寄存器..."
+log_step "[3/4] 读取寄存器"
 
 REG_EXIT=0
 if [ -n "$ELF_FILE" ]; then
-    # 通用寄存器
-    bash .gd32-agent/debug.sh --output "$EVIDENCE_DIR/registers-general.md" "$ELF_FILE" > /dev/null 2>&1
+    set +e
+    bash "$SCRIPT_DIR/debug.sh" --output "$EVIDENCE_DIR/registers-general.md" "$ELF_FILE" >/dev/null 2>&1
     REG_EXIT=$?
+    set -e
 
-    # 外设寄存器（如果地址文件存在）
     if [ -f "$PERIPH_ADDRS_FILE" ]; then
-        bash .gd32-agent/debug.sh --batch "$PERIPH_ADDRS_FILE" --output "$EVIDENCE_DIR/registers-periph.md" "$ELF_FILE" > /dev/null 2>&1
+        set +e
+        bash "$SCRIPT_DIR/debug.sh" --batch "$PERIPH_ADDRS_FILE" --output "$EVIDENCE_DIR/registers-periph.md" "$ELF_FILE" >/dev/null 2>&1
+        set -e
     fi
 
     if [ $REG_EXIT -eq 0 ]; then
-        echo "  寄存器读取成功"
+        log_ok "寄存器读取成功"
     else
-        echo "  寄存器读取失败（退出码: $REG_EXIT），继续执行"
+        log_warn "寄存器读取失败（退出码: $REG_EXIT），继续执行"
     fi
 else
-    echo "  跳过：未找到 .elf 文件"
+    log_warn "跳过：未找到 .elf 文件"
 fi
 
 # Step 4: 串口观察
-echo ""
-echo "[4/4] 串口观察 (${SERIAL_TIMEOUT}s)..."
-if [ -f "$SCRIPT_DIR/config.env" ]; then
-    source "$SCRIPT_DIR/config.env"
-fi
+log_step "[4/4] 串口观察 (${SERIAL_TIMEOUT}s)"
 SPORT="${SERIAL_PORT:-COM3}"
 SBAUD="${SERIAL_BAUDRATE:-115200}"
 
-bash .gd32-agent/serial.sh "$SPORT" "$SBAUD" "$SERIAL_TIMEOUT" > "$EVIDENCE_DIR/serial.log" 2>&1
+set +e
+bash "$SCRIPT_DIR/serial.sh" "$SPORT" "$SBAUD" "$SERIAL_TIMEOUT" > "$EVIDENCE_DIR/serial.log" 2>&1
 SERIAL_EXIT=$?
+set -e
 
 if [ $SERIAL_EXIT -eq 0 ]; then
-    echo "  串口捕获完成"
+    log_ok "串口捕获完成"
 else
-    echo "  串口捕获失败或超时（退出码: $SERIAL_EXIT）"
+    log_warn "串口捕获失败或超时（退出码: $SERIAL_EXIT）"
 fi
 
 # 汇总
-{
-    echo "BUILD_RESULT=PASS"
-    echo "BUILD_EXIT=$BUILD_EXIT"
-    echo "FLASH_RESULT=PASS"
-    echo "FLASH_EXIT=$FLASH_EXIT"
-    echo "REG_RESULT=$([ $REG_EXIT -eq 0 ] && echo PASS || echo FAIL)"
-    echo "REG_EXIT=$REG_EXIT"
-    echo "SERIAL_RESULT=$([ $SERIAL_EXIT -eq 0 ] && echo PASS || echo FAIL)"
-    echo "SERIAL_EXIT=$SERIAL_EXIT"
-    echo "FIRMWARE=$FIRMWARE"
-    echo "ELF_FILE=$ELF_FILE"
-    echo "EVIDENCE_DIR=$EVIDENCE_DIR"
-    echo "TIMESTAMP=$TIMESTAMP"
-} > "$EVIDENCE_DIR/summary.env"
+reg_result="PASS"; [ $REG_EXIT -ne 0 ] && reg_result="FAIL"
+serial_result="PASS"; [ $SERIAL_EXIT -ne 0 ] && serial_result="FAIL"
+write_summary PASS "$BUILD_EXIT" PASS "$FLASH_EXIT" "$reg_result" "$REG_EXIT" "$serial_result" "$SERIAL_EXIT" "$FIRMWARE" "${ELF_FILE:-}"
 
-echo ""
-echo "=========================================="
-echo "调试循环完成"
-echo "=========================================="
-echo "证据目录: $EVIDENCE_DIR"
-echo "  - build.log        编译日志"
-echo "  - flash.log        烧录日志"
-[ -f "$EVIDENCE_DIR/registers-general.md" ] && echo "  - registers-general.md   通用寄存器转储"
-[ -f "$EVIDENCE_DIR/registers-periph.md" ] && echo "  - registers-periph.md    外设寄存器转储"
-echo "  - serial.log       串口输出"
-echo "  - summary.env      结果汇总"
-echo "=========================================="
+banner "调试循环完成"
+log_info "证据目录: $EVIDENCE_DIR"
+echo "  - build.log               编译日志"
+echo "  - flash.log               烧录日志"
+[ -f "$EVIDENCE_DIR/registers-general.md" ] && echo "  - registers-general.md    通用寄存器转储"
+[ -f "$EVIDENCE_DIR/registers-periph.md" ]  && echo "  - registers-periph.md     外设寄存器转储"
+echo "  - serial.log              串口输出"
+echo "  - summary.env             结果汇总"

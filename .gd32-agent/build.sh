@@ -1,158 +1,130 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # GD32 AI Agent 编译脚本
+set -euo pipefail
 
-# 日志目录
-LOG_DIR=".gd32-agent/logs"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/common.sh"
+load_config
+
+LOG_DIR="$AGENT_DIR/logs"
 mkdir -p "$LOG_DIR"
+BUILD_LOG="$AGENT_DIR/build.log"
 
-# 日志文件
-BUILD_LOG=".gd32-agent/build.log"
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+banner "GD32 AI Agent 编译"
+log_info "编译时间: $(ts_human)"
 
-echo "=========================================="
-echo "GD32 AI Agent 编译"
-echo "=========================================="
-echo ""
-echo "编译时间: $TIMESTAMP"
-echo ""
-
-# 检测工程类型
-detect_project_type() {
-    if [ -f "CMakeLists.txt" ]; then
-        echo "CMake"
-    elif [ -f "Makefile" ]; then
-        echo "Make"
-    elif ls *.uvprojx 2>/dev/null | head -1 | grep -q .; then
-        echo "Keil"
-    elif ls *.ewp 2>/dev/null | head -1 | grep -q .; then
-        echo "IAR"
-    else
-        echo "Unknown"
-    fi
+log_with_ts() {
+    bash "$SCRIPT_DIR/log-with-timestamp.sh" "$@" >/dev/null 2>&1 || true
 }
 
 # 编译 CMake 工程
 build_cmake() {
-    echo "检测到 CMake 工程"
-    echo ""
+    log_info "检测到 CMake 工程"
+    mkdir -p "$PROJECT_DIR/build"
+    pushd "$PROJECT_DIR/build" >/dev/null
 
-    # 创建 build 目录
-    mkdir -p build
-    cd build || exit 1
-
-    # 运行 cmake
-    echo "运行 cmake..."
-    if ! cmake .. 2>&1 | tee -a "../$BUILD_LOG"; then
-        echo ""
-        echo "❌ cmake 配置失败"
-        bash ../.gd32-agent/log-with-timestamp.sh build FAIL "cmake 配置失败"
+    log_step "运行 cmake"
+    if ! cmake .. 2>&1 | tee -a "$BUILD_LOG"; then
+        log_error "cmake 配置失败"
+        log_with_ts build FAIL "cmake 配置失败"
+        popd >/dev/null
+        exit 1
+    fi
+    # 检查 pipeline 退出码
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        log_error "cmake 配置失败"
+        log_with_ts build FAIL "cmake 配置失败"
+        popd >/dev/null
         exit 1
     fi
 
-    # 运行 make
-    echo ""
-    echo "运行 make..."
-    if ! make 2>&1 | tee -a "../$BUILD_LOG"; then
-        echo ""
-        echo "❌ 编译失败"
-        bash ../.gd32-agent/log-with-timestamp.sh build FAIL "编译失败"
+    log_step "运行 make"
+    if ! make 2>&1 | tee -a "$BUILD_LOG"; then
+        log_error "编译失败"
+        log_with_ts build FAIL "编译失败"
+        popd >/dev/null
+        exit 1
+    fi
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        log_error "编译失败"
+        log_with_ts build FAIL "编译失败"
+        popd >/dev/null
         exit 1
     fi
 
-    cd ..
-    echo ""
-    echo "✅ 编译成功"
-    bash .gd32-agent/log-with-timestamp.sh build SUCCESS "CMake 工程编译完成"
+    popd >/dev/null
+    log_ok "编译成功"
+    log_with_ts build SUCCESS "CMake 工程编译完成"
 }
 
 # 编译 Make 工程
 build_make() {
-    echo "检测到 Make 工程"
-    echo ""
+    log_info "检测到 Make 工程"
+    pushd "$PROJECT_DIR" >/dev/null
 
-    # 清理
-    echo "清理旧文件..."
-    make clean 2>&1 | tee -a "$BUILD_LOG"
+    log_step "清理旧文件"
+    make clean 2>&1 | tee -a "$BUILD_LOG" || true
 
-    # 编译
-    echo "运行 make..."
+    log_step "运行 make"
     if ! make 2>&1 | tee -a "$BUILD_LOG"; then
-        echo ""
-        echo "❌ 编译失败"
-        bash .gd32-agent/log-with-timestamp.sh build FAIL "编译失败"
+        log_error "编译失败"
+        log_with_ts build FAIL "编译失败"
+        popd >/dev/null
+        exit 1
+    fi
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        log_error "编译失败"
+        log_with_ts build FAIL "编译失败"
+        popd >/dev/null
         exit 1
     fi
 
-    echo ""
-    echo "✅ 编译成功"
-    bash .gd32-agent/log-with-timestamp.sh build SUCCESS "Make 工程编译完成"
+    popd >/dev/null
+    log_ok "编译成功"
+    log_with_ts build SUCCESS "Make 工程编译完成"
 }
 
-# 编译 Keil 工程
+# 编译 Keil 工程（仅 Windows）
 build_keil() {
-    echo "检测到 Keil MDK 工程"
-    echo ""
-    echo "⚠️ Keil 工程需要手动编译或使用 UV4 命令行工具"
-    echo ""
-    echo "手动编译命令："
-    echo "  UV4 -b project.uvprojx -o build.log"
-    echo ""
-    bash .gd32-agent/log-with-timestamp.sh warn "Keil 工程需要手动编译"
+    log_info "检测到 Keil MDK 工程"
+    log_warn "Keil 工程需要手动编译或使用 UV4 命令行工具"
+    echo "手动编译命令: UV4 -b project.uvprojx -o build.log"
+    log_with_ts warn "Keil 工程需要手动编译"
 }
 
 # 编译 IAR 工程
 build_iar() {
-    echo "检测到 IAR 工程"
-    echo ""
-    echo "⚠️ IAR 工程需要手动编译或使用 IarBuild 命令行工具"
-    echo ""
-    echo "手动编译命令："
-    echo "  IarBuild.exe project.ewp -build Debug"
-    echo ""
-    bash .gd32-agent/log-with-timestamp.sh warn "IAR 工程需要手动编译"
+    log_info "检测到 IAR 工程"
+    log_warn "IAR 工程需要手动编译或使用 IarBuild 命令行工具"
+    echo "手动编译命令: IarBuild.exe project.ewp -build Debug"
+    log_with_ts warn "IAR 工程需要手动编译"
 }
 
-# 主函数
 main() {
-    # 检测工程类型
-    PROJECT_TYPE=$(detect_project_type)
-    echo "工程类型: $PROJECT_TYPE"
-    echo ""
+    local project_type
+    project_type=$(detect_project_type)
+    log_info "工程类型: $project_type"
 
-    # 根据工程类型编译
-    case "$PROJECT_TYPE" in
-        "CMake")
-            build_cmake
-            ;;
-        "Make")
-            build_make
-            ;;
-        "Keil")
-            build_keil
-            ;;
-        "IAR")
-            build_iar
-            ;;
+    case "$project_type" in
+        CMake)   build_cmake ;;
+        Make)    build_make ;;
+        Keil)    build_keil ;;
+        IAR)     build_iar ;;
         *)
-            echo "❌ 无法识别工程类型"
-            echo ""
+            log_error "无法识别工程类型"
             echo "支持的工程类型："
             echo "  - CMake (需要 CMakeLists.txt)"
             echo "  - Make (需要 Makefile)"
             echo "  - Keil MDK (需要 .uvprojx 文件)"
             echo "  - IAR (需要 .ewp 文件)"
-            bash .gd32-agent/log-with-timestamp.sh build FAIL "无法识别工程类型"
+            log_with_ts build FAIL "无法识别工程类型"
             exit 1
             ;;
     esac
 
-    echo ""
-    echo "=========================================="
-    echo "编译完成"
-    echo "=========================================="
-    echo ""
-    echo "日志文件: $BUILD_LOG"
+    banner "编译完成"
+    log_info "日志文件: $BUILD_LOG"
 }
 
-# 执行主函数
 main "$@"

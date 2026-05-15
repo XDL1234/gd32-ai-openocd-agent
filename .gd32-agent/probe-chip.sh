@@ -9,41 +9,15 @@
 #   - 跨平台：Windows(Git Bash)/Linux/macOS
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# 加载配置
-if [ -f "$SCRIPT_DIR/config.env" ]; then
-    source "$SCRIPT_DIR/config.env"
-fi
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/common.sh"
+load_config
 
 # 加载芯片数据库
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/gd32-chip-db.sh"
 
-# ===== OpenOCD 路径解析（复用现有模式）=====
-resolve_openocd() {
-    if [ -n "$OPENOCD_PATH" ] && [ -f "$OPENOCD_PATH" ]; then
-        echo "$OPENOCD_PATH"
-    elif command -v openocd &> /dev/null; then
-        which openocd
-    else
-        for candidate in \
-            "/usr/bin/openocd" \
-            "/usr/local/bin/openocd" \
-            "/opt/openocd/bin/openocd" \
-            "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
-            "C:/Program Files/openocd/bin/openocd.exe" \
-            "C:/Program Files (x86)/openocd/bin/openocd.exe" \
-            "C:/openocd/bin/openocd.exe"; do
-            if [ -f "$candidate" ]; then
-                echo "$candidate"
-                return
-            fi
-        done
-        echo ""
-    fi
-}
-
-OPENOCD=$(resolve_openocd)
+OPENOCD=$(resolve_openocd || true)
 
 # ===== 参数解析 =====
 INTERFACE_HINT=""

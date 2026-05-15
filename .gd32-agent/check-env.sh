@@ -1,191 +1,110 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # GD32 AI Agent 环境检查脚本
-# 支持 Windows (Git Bash/MSYS2) 和 Linux/macOS
+set -euo pipefail
 
-echo "=========================================="
-echo "GD32 AI Agent 环境检查"
-echo "=========================================="
-echo ""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/common.sh"
+load_config
 
-# 检测操作系统
-OS_TYPE="unknown"
-case "$(uname -s)" in
-    Linux*)   OS_TYPE="Linux" ;;
-    Darwin*)  OS_TYPE="macOS" ;;
-    MINGW*|MSYS*|CYGWIN*) OS_TYPE="Windows" ;;
-esac
-echo "操作系统: $OS_TYPE"
-echo ""
+banner "GD32 AI Agent 环境检查"
 
-# 检查结果
+OS_TYPE=$(detect_os)
+log_info "操作系统: $OS_TYPE"
+
 OPENOCD_FOUND=0
 GDB_FOUND=0
 PYTHON_FOUND=0
 PYSERIAL_FOUND=0
+GCC_FOUND=0
 
-# 通用命令查找函数（支持 Windows PATH 和常见安装路径）
-find_tool() {
-    local tool_name="$1"
-    shift
-    local extra_paths=("$@")
-
-    if command -v "$tool_name" &> /dev/null; then
-        which "$tool_name"
-        return 0
-    fi
-
-    for p in "${extra_paths[@]}"; do
-        if [ -f "$p" ]; then
-            echo "$p"
-            return 0
-        fi
-    done
-
-    return 1
-}
-
-# 检查 OpenOCD
-echo "检查 OpenOCD..."
-OPENOCD_RESULT=$(find_tool "openocd" \
-    "/usr/bin/openocd" \
-    "/usr/local/bin/openocd" \
-    "/opt/openocd/bin/openocd" \
-    "D:/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
-    "C:/Program Files/openocd/bin/openocd.exe" \
-    "C:/Program Files (x86)/openocd/bin/openocd.exe" \
-    "C:/openocd/bin/openocd.exe")
-if [ -n "$OPENOCD_RESULT" ]; then
-    OPENOCD_VERSION=$("$OPENOCD_RESULT" --version 2>&1 | head -1)
-    echo "✅ OpenOCD 已安装"
-    echo "   路径: $OPENOCD_RESULT"
-    echo "   版本: $OPENOCD_VERSION"
+# OpenOCD
+log_step "检查 OpenOCD"
+if openocd_path=$(resolve_openocd); then
+    openocd_version=$("$openocd_path" --version 2>&1 | head -1)
+    log_ok "OpenOCD 已安装"
+    echo "   路径: $openocd_path"
+    echo "   版本: $openocd_version"
     OPENOCD_FOUND=1
 else
-    echo "❌ OpenOCD 未安装"
+    log_error "OpenOCD 未安装"
     echo "   建议: 下载 xpack-openocd 并添加到 PATH"
 fi
 
-echo ""
-
-# 检查 GDB
-echo "检查 GDB..."
-GDB_RESULT=$(find_tool "arm-none-eabi-gdb" \
-    "/usr/bin/arm-none-eabi-gdb" \
-    "/usr/local/bin/arm-none-eabi-gdb" \
-    "C:/Program Files (x86)/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gdb.exe" \
-    "C:/Program Files/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gdb.exe")
-if [ -n "$GDB_RESULT" ]; then
-    GDB_VERSION=$("$GDB_RESULT" --version 2>&1 | head -1)
-    echo "✅ GDB 已安装"
-    echo "   路径: $GDB_RESULT"
-    echo "   版本: $GDB_VERSION"
+# GDB
+log_step "检查 GDB"
+if gdb_path=$(resolve_gdb); then
+    gdb_version=$("$gdb_path" --version 2>&1 | head -1)
+    log_ok "GDB 已安装"
+    echo "   路径: $gdb_path"
+    echo "   版本: $gdb_version"
     GDB_FOUND=1
 else
-    echo "❌ GDB 未安装"
+    log_error "GDB 未安装"
 fi
 
-echo ""
-
-# 检查 Python（Windows 上可能是 python 或 python3）
-echo "检查 Python..."
+# Python
+log_step "检查 Python"
 PYTHON_CMD=""
-if command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-elif command -v python &> /dev/null; then
-    PYTHON_CMD="python"
-fi
-
-if [ -n "$PYTHON_CMD" ]; then
-    PYTHON_PATH=$(which $PYTHON_CMD)
-    PYTHON_VERSION=$($PYTHON_CMD --version 2>&1)
-    echo "✅ Python 已安装"
-    echo "   路径: $PYTHON_PATH"
-    echo "   版本: $PYTHON_VERSION"
+if py=$(resolve_python); then
+    PYTHON_CMD="$py"
+    python_version=$("$py" --version 2>&1)
+    log_ok "Python 已安装"
+    echo "   路径: $py"
+    echo "   版本: $python_version"
     PYTHON_FOUND=1
 else
-    echo "❌ Python 未安装"
+    log_error "Python 未安装"
 fi
 
-echo ""
-
-# 检查 pyserial
-echo "检查 pyserial..."
-if [ -n "$PYTHON_CMD" ] && $PYTHON_CMD -c "import serial" &> /dev/null; then
-    PYSERIAL_VERSION=$($PYTHON_CMD -c "import serial; print(serial.__version__)")
-    echo "✅ pyserial 已安装"
-    echo "   版本: $PYSERIAL_VERSION"
+# pyserial
+log_step "检查 pyserial"
+if [ -n "$PYTHON_CMD" ] && "$PYTHON_CMD" -c "import serial" >/dev/null 2>&1; then
+    pyserial_version=$("$PYTHON_CMD" -c "import serial; print(serial.__version__)")
+    log_ok "pyserial 已安装"
+    echo "   版本: $pyserial_version"
     PYSERIAL_FOUND=1
 else
-    echo "❌ pyserial 未安装"
-    if [ -n "$PYTHON_CMD" ]; then
-        echo "   安装: $PYTHON_CMD -m pip install pyserial"
-    fi
+    log_error "pyserial 未安装"
+    [ -n "$PYTHON_CMD" ] && echo "   安装: $PYTHON_CMD -m pip install pyserial"
 fi
 
-echo ""
-
-# 检查 GCC（可选）
-echo "检查 GCC（可选）..."
-GCC_RESULT=$(find_tool "arm-none-eabi-gcc" \
-    "/usr/bin/arm-none-eabi-gcc" \
-    "/usr/local/bin/arm-none-eabi-gcc" \
-    "C:/Program Files (x86)/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gcc.exe" \
-    "C:/Program Files/GNU Arm Embedded Toolchain/bin/arm-none-eabi-gcc.exe")
-if [ -n "$GCC_RESULT" ]; then
-    GCC_VERSION=$("$GCC_RESULT" --version 2>&1 | head -1)
-    echo "✅ GCC 已安装"
-    echo "   路径: $GCC_RESULT"
-    echo "   版本: $GCC_VERSION"
+# GCC (可选)
+log_step "检查 ARM GCC（可选）"
+if gcc_path=$(resolve_arm_gcc); then
+    gcc_version=$("$gcc_path" --version 2>&1 | head -1)
+    log_ok "ARM GCC 已安装"
+    echo "   路径: $gcc_path"
+    echo "   版本: $gcc_version"
+    GCC_FOUND=1
 else
-    echo "⚠️ GCC 未安装（可选，仅 CMake/Make 工程需要）"
+    log_warn "ARM GCC 未安装（可选，仅 CMake/Make 工程需要）"
 fi
 
-echo ""
-
-# 检查串口设备
-echo "检查串口设备..."
-if [ -f ".gd32-agent/detect-serial.sh" ]; then
-    bash .gd32-agent/detect-serial.sh 2>/dev/null | grep -v "^DETECTED_PORT="
+# 串口设备
+log_step "检查串口设备"
+if [ -x "$SCRIPT_DIR/detect-serial.sh" ]; then
+    bash "$SCRIPT_DIR/detect-serial.sh" 2>/dev/null | grep -v "^DETECTED_PORT=" || true
 fi
 
-echo ""
+banner "环境检查总结"
 
-# 总结
-echo "=========================================="
-echo "环境检查总结"
-echo "=========================================="
+MISSING_TOOLS=()
+[ $OPENOCD_FOUND -eq 0 ]  && MISSING_TOOLS+=("OpenOCD")
+[ $GDB_FOUND -eq 0 ]      && MISSING_TOOLS+=("GDB")
+[ $PYTHON_FOUND -eq 0 ]   && MISSING_TOOLS+=("Python")
+[ $PYSERIAL_FOUND -eq 0 ] && MISSING_TOOLS+=("pyserial")
 
-MISSING_TOOLS=""
-
-if [ $OPENOCD_FOUND -eq 0 ]; then
-    MISSING_TOOLS="$MISSING_TOOLS OpenOCD"
-fi
-
-if [ $GDB_FOUND -eq 0 ]; then
-    MISSING_TOOLS="$MISSING_TOOLS GDB"
-fi
-
-if [ $PYTHON_FOUND -eq 0 ]; then
-    MISSING_TOOLS="$MISSING_TOOLS Python"
-fi
-
-if [ $PYSERIAL_FOUND -eq 0 ]; then
-    MISSING_TOOLS="$MISSING_TOOLS pyserial"
-fi
-
-if [ -z "$MISSING_TOOLS" ]; then
-    echo "✅ 所有必需工具已安装"
-    echo ""
+if [ ${#MISSING_TOOLS[@]} -eq 0 ]; then
+    log_ok "所有必需工具已安装"
     echo "环境配置完成，可以开始使用 GD32 AI Agent"
 else
-    echo "❌ 缺少以下工具：$MISSING_TOOLS"
+    log_error "缺少以下工具：${MISSING_TOOLS[*]}"
     echo ""
     echo "安装建议："
-    [ $OPENOCD_FOUND -eq 0 ] && echo "  OpenOCD: https://github.com/xpack-dev-tools/openocd-xpack/releases"
-    [ $GDB_FOUND -eq 0 ] && echo "  GDB: 安装 GNU Arm Embedded Toolchain"
-    [ $PYTHON_FOUND -eq 0 ] && echo "  Python: https://www.python.org/downloads/"
+    [ $OPENOCD_FOUND -eq 0 ]  && echo "  OpenOCD:  https://github.com/xpack-dev-tools/openocd-xpack/releases"
+    [ $GDB_FOUND -eq 0 ]      && echo "  GDB:      安装 GNU Arm Embedded Toolchain"
+    [ $PYTHON_FOUND -eq 0 ]   && echo "  Python:   https://www.python.org/downloads/"
     [ $PYSERIAL_FOUND -eq 0 ] && echo "  pyserial: pip install pyserial"
+    exit 1
 fi
-
-echo ""
-echo "=========================================="

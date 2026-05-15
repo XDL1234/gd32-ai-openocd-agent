@@ -204,7 +204,8 @@ if [ -f "$CONFIG_FILE" ]; then
                 "/opt/openocd/bin/openocd" \
                 "/c/Program Files/openocd/bin/openocd.exe" \
                 "/c/Program Files (x86)/openocd/bin/openocd.exe" \
-                "/d/openocd/xpack-openocd-0.12.0-6/bin/openocd.exe" \
+                /d/openocd/xpack-openocd-*/bin/openocd.exe \
+                /c/openocd/xpack-openocd-*/bin/openocd.exe \
                 "$HOME/.local/xPacks/@xpack-dev-tools/openocd/*/content/bin/openocd.exe" \
                 "/c/xpack-openocd/bin/openocd.exe"; do
                 if [ -f "$candidate" ]; then
