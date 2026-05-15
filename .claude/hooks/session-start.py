@@ -344,58 +344,18 @@ Read and follow all instructions below carefully.
     output.write(run_script(context_script))
     output.write("\n</current-state>\n\n")
 
-    output.write("<workflow>\n")
-    output.write(_build_workflow_toc(trellis_dir / "workflow.md"))
-    output.write("\n</workflow>\n\n")
-
-    output.write("<guidelines>\n")
-    output.write("**Note**: The guidelines below are index files — they list available guideline documents and their locations.\n")
-    output.write("During actual development, you MUST read the specific guideline files listed in each index's Pre-Development Checklist.\n\n")
-
-    spec_dir = trellis_dir / "spec"
-    if spec_dir.is_dir():
-        for sub in sorted(spec_dir.iterdir()):
-            if not sub.is_dir() or sub.name.startswith("."):
-                continue
-
-            # Always include guides/ regardless of scope
-            if sub.name == "guides":
-                index_file = sub / "index.md"
-                if index_file.is_file():
-                    output.write(f"## {sub.name}\n")
-                    output.write(read_file(index_file))
-                    output.write("\n\n")
-                continue
-
-            index_file = sub / "index.md"
-            if index_file.is_file():
-                # Flat spec dir (single-repo layer like spec/backend/)
-                output.write(f"## {sub.name}\n")
-                output.write(read_file(index_file))
-                output.write("\n\n")
-            else:
-                # Nested package dirs (monorepo: spec/<pkg>/<layer>/index.md)
-                # Apply scope filter
-                if allowed_pkgs is not None and sub.name not in allowed_pkgs:
-                    continue
-                for nested in sorted(sub.iterdir()):
-                    if not nested.is_dir():
-                        continue
-                    nested_index = nested / "index.md"
-                    if nested_index.is_file():
-                        output.write(f"## {sub.name}/{nested.name}\n")
-                        output.write(read_file(nested_index))
-                        output.write("\n\n")
-
-    output.write("</guidelines>\n\n")
+    # NOTE: <workflow> 和 <guidelines> 两个 block 已移除。
+    # 原因：本工程是 GD32 嵌入式项目，使用 CLAUDE.md + embedded-dev/SKILL.md 定义流程，
+    # 不依赖 Trellis 的通用 workflow / spec(backend/frontend) 模板。
+    # 移除后启动开销减少 ~1500 tokens，开发协议（RIPER-5、四文件、安全规则）完全不受影响。
 
     # Check task status and inject structured tag
     task_status = _get_task_status(trellis_dir)
     output.write(f"<task-status>\n{task_status}\n</task-status>\n\n")
 
     output.write("""<ready>
-Context loaded. Workflow index, project state, and guidelines are already injected above — do NOT re-read them.
-Wait for the user's first message, then handle it following the workflow guide.
+Context loaded. Project state and task status are injected above — do NOT re-read them.
+Wait for the user's first message, then handle it following CLAUDE.md and embedded-dev/SKILL.md.
 If there is an active task, ask whether to continue it.
 </ready>""")
 
